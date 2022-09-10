@@ -7,26 +7,28 @@ public class SpeedTests
     [Test]
     public void CompareTimes()
     {
-        long parallelTime = 0;
+        int width = 600;
+        int height = 610;
+        long[] parallelTimes = new long[10];
         for (int i = 0; i < 10; i++)
         {
-            GenerateMatrix(35, 30, "hello");
-            GenerateMatrix(30, 40, "goodbye");
+            GenerateMatrix(height, width, "hello");
+            GenerateMatrix(width, height, "goodbye");
             string path1 = "../../../TestFiles/hello.txt";
             string path2 = "../../../TestFiles/goodbye.txt";
 
             var watch = new Stopwatch();
             watch.Start();
-            Operations.MultiplyParallel(path1, path2);
+            Operations.MultiplyParallel3(path1, path2);
             watch.Stop();
-            parallelTime += watch.ElapsedMilliseconds;
+            parallelTimes[i] = watch.ElapsedMilliseconds;
         }
 
-        long consecutiveTime = 0;
+        long[] consecutiveTimes = new long[10];
         for (int i = 0; i < 10; i++)
         {
-            GenerateMatrix(120, 150, "hello");
-            GenerateMatrix(150, 120, "goodbye");
+            GenerateMatrix(height, width, "hello");
+            GenerateMatrix(width, height, "goodbye");
             string path1 = "../../../TestFiles/hello.txt";
             string path2 = "../../../TestFiles/goodbye.txt";
 
@@ -34,8 +36,33 @@ public class SpeedTests
             watch.Start();
             Operations.MultiplyConsecutive(path1, path2);
             watch.Stop();
-            consecutiveTime += watch.ElapsedMilliseconds;
+            consecutiveTimes[i] = watch.ElapsedMilliseconds;
         }
+
+        //long[] parallel2Times = new long[10];
+        //for (int i = 0; i < 10; i++)
+        //{
+        //    GenerateMatrix(height, width, "hello");
+        //    GenerateMatrix(width, height, "goodbye");
+        //    string path1 = "../../../TestFiles/hello.txt";
+        //    string path2 = "../../../TestFiles/goodbye.txt";
+
+        //    var watch = new Stopwatch();
+        //    watch.Start();
+        //    Operations.MultiplyParallel2(path1, path2);
+        //    watch.Stop();
+        //    parallel2Times[i] = watch.ElapsedMilliseconds;
+        //}
+        long expectationParallel = 0;
+        long expectationConsecutive = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            expectationParallel += parallelTimes[i];
+            expectationConsecutive += consecutiveTimes[i];
+        }
+
+        expectationParallel /= 10;
+        expectationConsecutive /= 10;
     }
 
     private void GenerateMatrix(int height, int width, string fileName)
