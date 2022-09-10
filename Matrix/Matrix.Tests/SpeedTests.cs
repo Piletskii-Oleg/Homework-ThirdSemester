@@ -63,6 +63,17 @@ public class SpeedTests
 
         expectationParallel /= 10;
         expectationConsecutive /= 10;
+
+        long variationParallel = 0;
+        long variationConsecutive = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            variationParallel += (parallelTimes[i] - expectationParallel) * (parallelTimes[i] - expectationParallel) / 10;
+            variationConsecutive += (consecutiveTimes[i] - expectationConsecutive) * (consecutiveTimes[i] - expectationConsecutive) / 10;
+        }
+
+        int deviationConsecutive = (int)Math.Sqrt(variationConsecutive);
+        int deviationParallel = (int)Math.Sqrt(variationParallel);
     }
 
     private void GenerateMatrix(int height, int width, string fileName)
