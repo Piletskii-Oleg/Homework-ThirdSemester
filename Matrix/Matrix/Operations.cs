@@ -2,7 +2,7 @@
 
 public static class Operations
 {
-    public static int[,] MultiplyConsecutive(string path1, string path2, string outputPath)
+    public static int[,] MultiplySequential(string path1, string path2, string outputPath)
     {
         var matrix1 = ReadMatrixFromFile(path1);
         var matrix2 = ReadMatrixFromFile(path2);

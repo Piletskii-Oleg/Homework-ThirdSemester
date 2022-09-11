@@ -48,7 +48,7 @@ if (compareWord == "Да")
 
     Console.WriteLine();
     Console.WriteLine("Последовательные вычисления: ");
-    ComputeTimes(heightFirst, widthFirst, heightSecond, widthSecond, Matrix.Operations.MultiplyConsecutive);
+    ComputeTimes(heightFirst, widthFirst, heightSecond, widthSecond, Matrix.Operations.MultiplySequential);
 }
 else
 {

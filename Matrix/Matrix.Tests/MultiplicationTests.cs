@@ -14,7 +14,7 @@ public class Tests
         string path2 = "../../../TestFiles/matrix2.txt";
         string outputPath = "../../../TestFiles/output.txt";
         var matrixParallel = Operations.MultiplyParallel(path1, path2, outputPath);
-        var matrixConsecutive = Operations.MultiplyConsecutive(path1, path2, outputPath);
-        Assert.That(matrixConsecutive, Is.EqualTo(matrixParallel));
+        var matrixSequential = Operations.MultiplySequential(path1, path2, outputPath);
+        Assert.That(matrixSequential, Is.EqualTo(matrixParallel));
     }
 }
