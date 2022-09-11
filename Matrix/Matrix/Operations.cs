@@ -2,7 +2,7 @@
 
 public static class Operations
 {
-    public static int[,] MultiplyConsecutive(string path1, string path2)
+    public static int[,] MultiplyConsecutive(string path1, string path2, string outputPath)
     {
         var matrix1 = ReadMatrixFromFile(path1);
         var matrix2 = ReadMatrixFromFile(path2);
@@ -23,51 +23,11 @@ public static class Operations
             }
         }
 
+        WriteMatrixToFile(outputPath, resultMatrix);
         return resultMatrix;
     }
 
-    public static int[,] MultiplyParallel(string path1, string path2)
-    {
-        var matrix1 = ReadMatrixFromFile(path1);
-        var matrix2 = ReadMatrixFromFile(path2);
-        if (matrix1.GetLength(1) != matrix2.GetLength(0))
-        {
-            throw new IncompatibleMatrixSizesException();
-        }
-
-        var resultMatrix = new int[matrix1.GetLength(0), matrix2.GetLength(1)];
-        var threads = new Thread[matrix1.GetLength(0)];
-        int count = 0;
-        for (int i = 0; i < matrix1.GetLength(0); i++)
-        {
-            var localI = i;
-            threads[count] = new Thread(() =>
-            {
-                for (int j = 0; j < matrix2.GetLength(1); j++)
-                {
-                    for (int k = 0; k < matrix1.GetLength(1); k++)
-                    {
-                        resultMatrix[localI, j] += matrix1[localI, k] * matrix2[k, j];
-                    }
-                }
-            });
-            count++;
-        }
-
-        foreach(var thread in threads)
-        {
-            thread.Start();
-        }
-
-        foreach(var thread in threads)
-        {
-            thread.Join();
-        }
-
-        return resultMatrix;
-    }
-
-    public static int[,] MultiplyParallel3(string path1, string path2)
+    public static int[,] MultiplyParallel(string path1, string path2, string outputPath)
     {
         var matrix1 = ReadMatrixFromFile(path1);
         var matrix2 = ReadMatrixFromFile(path2);
@@ -82,7 +42,7 @@ public static class Operations
         var maxRows = new int[8];
         for (int i = 0; i < 7; i++)
         {
-            maxRows[i] = i * lineWidth + lineWidth;
+            maxRows[i] = Math.Clamp(i * lineWidth + lineWidth, 0, matrix1.GetLength(0));
         }
 
         maxRows[7] = matrix1.GetLength(0);
@@ -114,60 +74,7 @@ public static class Operations
             thread.Join();
         }
 
-        return resultMatrix;
-    }
-
-    public static int[,] MultiplyParallel2(string path1, string path2)
-    {
-        var matrix1 = ReadMatrixFromFile(path1);
-        var matrix2 = ReadMatrixFromFile(path2);
-        if (matrix1.GetLength(1) != matrix2.GetLength(0))
-        {
-            throw new IncompatibleMatrixSizesException();
-        }
-
-        var resultMatrix = new int[matrix1.GetLength(0), matrix2.GetLength(1)];
-        var threads = new Thread[8];
-        int count = 0;
-        for (int i = 0; i < matrix1.GetLength(0); i++)
-        {
-            var localI = i;
-            threads[count] = new Thread(() =>
-            {
-                for (int j = 0; j < matrix2.GetLength(1); j++)
-                {
-                    for (int k = 0; k < matrix1.GetLength(1); k++)
-                    {
-                        resultMatrix[localI, j] += matrix1[localI, k] * matrix2[k, j];
-                    }
-                }
-            });
-            count++;
-            if (count % 8 == 0 && count > 0)
-            {
-                count = 0;
-                foreach (var thread in threads)
-                {
-                    thread.Start();
-                }
-
-                foreach (var thread in threads)
-                {
-                    thread.Join();
-                }
-            }
-        }
-
-        for (int i = 0; i < count; i++)
-        {
-            threads[i].Start();
-        }
-
-        for (int i = 0; i < count; i++)
-        {
-            threads[i].Join();
-        }
-
+        WriteMatrixToFile(outputPath, resultMatrix);
         return resultMatrix;
     }
 
@@ -187,5 +94,23 @@ public static class Operations
         }
 
         return matrix;
+    }
+
+    private static void WriteMatrixToFile(string path, int[,] matrix)
+    {
+        using var writer = new StreamWriter(path);
+        for (int i = 0; i < matrix.GetLength(0); i++)
+        {
+            for (int j = 0; j < matrix.GetLength(1); j++)
+            {
+                writer.Write(matrix[i, j]);
+                if (j < matrix.GetLength(1) - 1)
+                {
+                    writer.Write(" ");
+                }
+            }
+
+            writer.Write("\n");
+        }
     }
 }
