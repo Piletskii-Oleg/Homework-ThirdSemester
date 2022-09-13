@@ -10,7 +10,7 @@ int widthFirst = 0;
 Console.Write("Введите количество столбцов в первой матрице: ");
 while (!int.TryParse(Console.ReadLine(), out widthFirst))
 {
-    Console.Write("Введите колиество столбцов в первой матрице: ");
+    Console.Write("Введите количество столбцов в первой матрице: ");
 }
 
 int heightSecond = 0;
@@ -25,7 +25,7 @@ while (!int.TryParse(Console.ReadLine(), out heightSecond) || heightSecond != wi
     Console.Write("Введите количество строк во второй матрице: ");
 }
 
-Console.Write("Введите колиество столбцов во второй матрице: ");
+Console.Write("Введите количество столбцов во второй матрице: ");
 int widthSecond = 0;
 while (!int.TryParse(Console.ReadLine(), out widthSecond))
 {
@@ -38,41 +38,65 @@ string? compareWord = Console.ReadLine();
 while (compareWord != "Да" && compareWord != "Нет")
 {
     Console.WriteLine("Нужно ли сравнить скорость параллельного и последовательного умножения?");
+    compareWord = Console.ReadLine();
 }
 
 if (compareWord == "Да")
 {
     Console.WriteLine();
     Console.WriteLine("Параллельные вычисления: ");
-    ComputeTimes(heightFirst, widthFirst, heightSecond, widthSecond, Matrix.Operations.MultiplyParallel);
+    ComputeTimes(Matrix.Operations.MultiplyParallel);
 
     Console.WriteLine();
     Console.WriteLine("Последовательные вычисления: ");
-    ComputeTimes(heightFirst, widthFirst, heightSecond, widthSecond, Matrix.Operations.MultiplySequential);
+    ComputeTimes(Matrix.Operations.MultiplySequential);
 }
 else
 {
+    Console.WriteLine("Как нужно перемножить матрицы? \"Параллельно\" или \"Последовательно\"?");
+    compareWord = Console.ReadLine();
+    while (compareWord != "Параллельно" && compareWord != "Последовательно")
+    {
+        Console.WriteLine("Как нужно перемножить матрицы? \"Параллельно\" или \"Последовательно\"?");
+        compareWord = Console.ReadLine();
+    }
 
+    string path1 = "../../../matrixOne.txt";
+    string path2 = "../../../matrixTwo.txt";
+    string outputPath = "../../../output.txt";
+    Matrix.Operations.Generate(heightFirst, widthFirst, path1);
+    Matrix.Operations.Generate(heightFirst, widthFirst, path2);
+    if (compareWord == "Параллельно")
+    {
+        Matrix.Operations.MultiplyParallel(path1, path2, outputPath);
+    }
+    else
+    {
+        Matrix.Operations.MultiplySequential(path1, path2, outputPath);
+    }
+
+    var info = new FileInfo(path1);
+    Console.WriteLine($"Сгенерированные матрицы лежат в папке {info.DirectoryName}.");
 }
 
+Console.WriteLine("Работа завершена.");
 
-
-void ComputeTimes(int heightFirst, int widthFirst, int heightSecond, int widthSecond, Func<string, string, string, int[,]> Multiply)
+void ComputeTimes(Func<string, string, string, int[,]> multiply)
 {
     long[] data = new long[10];
     string outputPath = "../../../output.txt";
     for (int i = 0; i < 10; i++)
     {
-        GenerateMatrix(heightFirst, widthFirst, "matrixOne");
-        GenerateMatrix(heightSecond, widthSecond, "matrixTwo");
         string path1 = "../../../matrixOne.txt";
         string path2 = "../../../matrixTwo.txt";
+        Matrix.Operations.Generate(heightFirst, widthFirst, path1);
+        Matrix.Operations.Generate(heightSecond, widthSecond, path2);
 
         var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
-        Multiply(path1, path2, outputPath);
+        multiply(path1, path2, outputPath);
         watch.Stop();
-        File.Delete(path1); 
+        File.Delete(path1);
         File.Delete(path2);
         data[i] = watch.ElapsedMilliseconds;
     }
@@ -82,25 +106,6 @@ void ComputeTimes(int heightFirst, int widthFirst, int heightSecond, int widthSe
     Console.WriteLine($"Математическое ожидание: {expectedValue} мс");
     Console.WriteLine($"Стандартное отклонение: {standardDeviation} мс");
     File.Delete(outputPath);
-}
-
-void GenerateMatrix(int height, int width, string fileName)
-{
-    using var writer = new StreamWriter(File.Create($"../../../{fileName}.txt"));
-    var random = new Random();
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            writer.Write(random.Next(500));
-            if (j < width - 1)
-            {
-                writer.Write(" ");
-            }
-        }
-
-        writer.Write("\n");
-    }
 }
 
 double CountExpectedValue(long[] data, int numberOfTries)

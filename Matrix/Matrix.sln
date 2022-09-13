@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32519.379
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Matrix", "Matrix\Matrix.csproj", "{55087FE6-6C57-4855-96A2-A9446C4A4D00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Matrix", "Matrix\Matrix.csproj", "{55087FE6-6C57-4855-96A2-A9446C4A4D00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Matrix.Tests", "Matrix.Tests\Matrix.Tests.csproj", "{AEE659DE-305C-4885-ABD5-BFE28B7292BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Matrix.Tests", "Matrix.Tests\Matrix.Tests.csproj", "{AEE659DE-305C-4885-ABD5-BFE28B7292BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
