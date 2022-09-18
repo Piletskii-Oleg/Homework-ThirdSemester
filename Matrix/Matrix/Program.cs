@@ -1,111 +1,95 @@
 ﻿Console.WriteLine("Программа: умножение матриц.");
-int heightFirst = 0;
-Console.Write("Введите количество строк в первой матрице: ");
-while (!int.TryParse(Console.ReadLine(), out heightFirst))
+Console.WriteLine("Если нужно сравнить скорость вычислений, укажите \"-compare\" или \"-nocompare\" как первый аргумент командной строки.");
+if (args.Length <= 0 || (args[0] != "-compare" && args[0] != "-nocompare"))
 {
-    Console.Write("Введите количество строк в первой матрице: ");
+    Console.WriteLine("Ошибка: нет первого аргумента.");
+    return;
 }
 
-int widthFirst = 0;
-Console.Write("Введите количество столбцов в первой матрице: ");
-while (!int.TryParse(Console.ReadLine(), out widthFirst))
+if (args[0] == "-compare")
 {
-    Console.Write("Введите количество столбцов в первой матрице: ");
-}
-
-int heightSecond = 0;
-Console.Write("Введите количество строк во второй матрице: ");
-while (!int.TryParse(Console.ReadLine(), out heightSecond) || heightSecond != widthFirst)
-{
-    if (heightSecond != widthFirst)
+    int size = 100;
+    Console.WriteLine("Размер | Мат. ожидание (Послед.) | Станд. отклонение (Послед.) | Мат. ожидание (Паралл.) | Станд. отклонение (Паралл.) |");
+    for (int i = 1; i < 11; i++)
     {
-        Console.WriteLine("Количество строк во второй матрице должно совпадать с количеством столбцов в первой.");
+        Console.Write($"{size * i}    |");
+        ComputeTimes(Matrix.Matrix.MultiplySequential, size * i);
+        ComputeTimes(Matrix.Matrix.MultiplyParallel, size * i);
+        Console.WriteLine();
+    }
+}
+else if (args[0] == "-nocompare")
+{
+    Console.WriteLine("Укажите тип вычисления, \"-parallel\" или \"-sequential\", как второй аргумент командной строки.");
+    if (args.Length <= 1 || (args[1] != "-parallel" && args[1] != "-sequential"))
+    {
+        Console.WriteLine("Ошибка: нет типа вычислений.");
+        return;
     }
 
-    Console.Write("Введите количество строк во второй матрице: ");
-}
+    Console.WriteLine("Укажите пути до имеющихся матриц как третий и четвертый аргументы командной строки.");
+    if (args.Length <= 3)
+    {
+        Console.WriteLine("Ошибка: нет путей до файлов.");
+        return;
+    }
 
-Console.Write("Введите количество столбцов во второй матрице: ");
-int widthSecond = 0;
-while (!int.TryParse(Console.ReadLine(), out widthSecond))
-{
-    Console.Write("Введите количество столбцов во второй матрице: ");
-}
+    Console.WriteLine("Укажите путь, где должна появиться новая матрица, как пятый аргумент командной строки.");
+    if (args.Length <= 4)
+    {
+        Console.WriteLine("Ошибка: нет результирующего пути.");
+        return;
+    }
 
-Console.WriteLine("Нужно ли сравнить скорость параллельного и последовательного умножения?");
-Console.WriteLine("Введите \"Да\" или \"Нет\"");
-string? compareWord = Console.ReadLine();
-while (compareWord != "Да" && compareWord != "Нет")
-{
-    Console.WriteLine("Нужно ли сравнить скорость параллельного и последовательного умножения?");
-    compareWord = Console.ReadLine();
-}
-
-if (compareWord == "Да")
-{
-    Console.WriteLine();
-    Console.WriteLine("Параллельные вычисления: ");
-    ComputeTimes(Matrix.Operations.MultiplyParallel);
-
-    Console.WriteLine();
-    Console.WriteLine("Последовательные вычисления: ");
-    ComputeTimes(Matrix.Operations.MultiplySequential);
+    string path1 = args[2];
+    string path2 = args[3];
+    string outputPath = args[4];
+    try
+    {
+        if (args[1] == "-parallel")
+        {
+            var matrix = Matrix.Matrix.MultiplyParallel(new Matrix.Matrix(path1), new Matrix.Matrix(path2));
+            Matrix.Matrix.WriteToFile(outputPath, matrix);
+        }
+        else if (args[1] == "-sequential")
+        {
+            var matrix = Matrix.Matrix.MultiplySequential(new Matrix.Matrix(path1), new Matrix.Matrix(path2));
+            Matrix.Matrix.WriteToFile(outputPath, matrix);
+        }
+    }
+    catch (DirectoryNotFoundException)
+    {
+        Console.WriteLine("Указаны неверные пути для файлов:");
+    }
+    catch (FileNotFoundException)
+    {
+        Console.WriteLine("Указаны неверные пути для файлов:");
+    }
 }
 else
 {
-    Console.WriteLine("Как нужно перемножить матрицы? \"Параллельно\" или \"Последовательно\"?");
-    compareWord = Console.ReadLine();
-    while (compareWord != "Параллельно" && compareWord != "Последовательно")
-    {
-        Console.WriteLine("Как нужно перемножить матрицы? \"Параллельно\" или \"Последовательно\"?");
-        compareWord = Console.ReadLine();
-    }
-
-    string path1 = "../../../matrixOne.txt";
-    string path2 = "../../../matrixTwo.txt";
-    string outputPath = "../../../output.txt";
-    Matrix.Operations.Generate(heightFirst, widthFirst, path1);
-    Matrix.Operations.Generate(heightFirst, widthFirst, path2);
-    if (compareWord == "Параллельно")
-    {
-        Matrix.Operations.MultiplyParallel(path1, path2, outputPath);
-    }
-    else
-    {
-        Matrix.Operations.MultiplySequential(path1, path2, outputPath);
-    }
-
-    var info = new FileInfo(path1);
-    Console.WriteLine($"Сгенерированные матрицы лежат в папке {info.DirectoryName}.");
+    Console.WriteLine("Ошибка: указан неверный аргумент.");
 }
 
-Console.WriteLine("Работа завершена.");
-
-void ComputeTimes(Func<string, string, string, int[,]> multiply)
+void ComputeTimes(Func<Matrix.Matrix, Matrix.Matrix, Matrix.Matrix> multiply, int size)
 {
-    long[] data = new long[10];
-    string outputPath = "../../../output.txt";
+    var data = new long[10];
+    var watch = new System.Diagnostics.Stopwatch();
     for (int i = 0; i < 10; i++)
     {
-        string path1 = "../../../matrixOne.txt";
-        string path2 = "../../../matrixTwo.txt";
-        Matrix.Operations.Generate(heightFirst, widthFirst, path1);
-        Matrix.Operations.Generate(heightSecond, widthSecond, path2);
+        var testMatrix1 = Matrix.Matrix.Generate(size, size, 100);
+        var testMatrix2 = Matrix.Matrix.Generate(size, size, 100);
 
-        var watch = new System.Diagnostics.Stopwatch();
         watch.Start();
-        multiply(path1, path2, outputPath);
+        multiply(testMatrix1, testMatrix2);
         watch.Stop();
-        File.Delete(path1);
-        File.Delete(path2);
         data[i] = watch.ElapsedMilliseconds;
+        watch.Reset();
     }
 
-    double expectedValue = CountExpectedValue(data, 10);
-    double standardDeviation = CountStandardDeviation(data, 10, expectedValue);
-    Console.WriteLine($"Математическое ожидание: {expectedValue} мс");
-    Console.WriteLine($"Стандартное отклонение: {standardDeviation} мс");
-    File.Delete(outputPath);
+    var expectedValue = CountExpectedValue(data, 10);
+    var standardDeviation = CountStandardDeviation(data, 10, expectedValue);
+    Console.Write($"         {expectedValue:G4} мс          |          {standardDeviation:G4} мс         | ");
 }
 
 double CountExpectedValue(long[] data, int numberOfTries)
@@ -116,7 +100,7 @@ double CountExpectedValue(long[] data, int numberOfTries)
         expectation += data[i];
     }
 
-    return expectation / numberOfTries;
+    return (double)expectation / numberOfTries;
 }
 
 double CountStandardDeviation(long[] data, int numberOfTries, double expectation)
