@@ -9,6 +9,20 @@ public class LazyTests
             new TestCaseData(new LazyMultiThread<int>(() => 5))
         };
 
+    private static IEnumerable<TestCaseData> LazyString
+        => new[]
+        {
+            new TestCaseData(new LazySingleThread<string>(() => "u234aaa3")),
+            new TestCaseData(new LazyMultiThread<string>(() => "u234aaa3"))
+        };
+
+    private static IEnumerable<TestCaseData> LazyNull
+        => new[]
+        {
+            new TestCaseData(new LazySingleThread<object>(() => null)),
+            new TestCaseData(new LazyMultiThread<object>(() => null))
+        };
+
     private static IEnumerable<TestCaseData> LazyCurrentSecond
         => new[]
         {
@@ -17,8 +31,12 @@ public class LazyTests
         };
 
     [TestCaseSource(nameof(LazyInt))]
-    public void LazyValueIsCalculatedCorrectly(ILazy<int> lazy)
+    public void LazyIntValueIsCalculatedCorrectly(ILazy<int> lazy)
         => Assert.That(lazy.Get(), Is.EqualTo(5));
+
+    [TestCaseSource(nameof(LazyString))]
+    public void LazyStringValueIsCalculatedCorrectly(ILazy<string> lazy)
+        => Assert.That(lazy.Get(), Is.EqualTo("u234aaa3"));
 
     [TestCaseSource(nameof(LazyCurrentSecond))]
     public void ChangingValueIsCalculatedOnlyOnce(ILazy<int> lazy)
@@ -28,6 +46,10 @@ public class LazyTests
         Thread.Sleep(2000);
         Assert.That(lazy.Get(), Is.EqualTo(currentSecond));
     }
+    
+    [TestCaseSource(nameof(LazyNull))]
+    public void NullReturningFunctionShouldThrowException(ILazy<object> lazy)
+        => Assert.DoesNotThrow(() => lazy.Get());
 
     [Test]
     public void MultiThreadLazyShouldNotCauseRaces()
