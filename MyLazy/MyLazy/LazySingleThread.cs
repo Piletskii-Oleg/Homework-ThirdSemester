@@ -8,7 +8,7 @@ public class LazySingleThread<T> : ILazy<T>
 {
     private readonly Func<T> function;
     private Func<T> result = () => throw new InvalidOperationException();
-    private bool isCalculated = false;
+    private bool isCalculated;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LazySingleThread{T}"/> class.

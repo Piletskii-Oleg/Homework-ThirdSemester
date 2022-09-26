@@ -9,7 +9,7 @@ public class LazyMultiThread<T> : ILazy<T>
     private readonly Func<T> function;
     private readonly object lockObject = new ();
     private Func<T> result = () => throw new InvalidOperationException();
-    private bool isCalculated = false;
+    private bool isCalculated;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LazyMultiThread{T}"/> class.
