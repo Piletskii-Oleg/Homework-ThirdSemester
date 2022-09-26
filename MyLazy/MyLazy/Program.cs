@@ -1,2 +1,7 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using MyLazy;
+
+LazySingleThread<int> a = new(() => 2 * 2);
+int b = a.Get();
+Console.WriteLine(b);
+Console.WriteLine(b);
+Console.WriteLine(b); Console.WriteLine(b);
