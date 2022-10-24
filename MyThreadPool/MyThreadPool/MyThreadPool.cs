@@ -19,7 +19,7 @@ public class MyThreadPool
     /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
     /// </summary>
     /// <param name="threadCount">Amount of threads on thread pool.</param>
-    /// <exception cref="IncorrectThreadCountException">Throws if the amount of threads was lesser than 1</exception>
+    /// <exception cref="IncorrectThreadCountException">Throws if the amount of threads was lesser than 1.</exception>
     public MyThreadPool(int threadCount)
     {
         if (threadCount <= 0)
