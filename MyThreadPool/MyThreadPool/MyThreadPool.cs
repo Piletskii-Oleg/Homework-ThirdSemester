@@ -4,41 +4,33 @@ using System.Collections.Concurrent;
 
 public class MyThreadPool
 {
-    private readonly Thread[] threads;
+    private readonly object locker = new ();
+
+    private readonly ThreadPoolItem[] threadPollItems;
 
     private readonly BlockingCollection<Action> collection;
 
     public MyThreadPool(int threadCount)
     {
-        this.threads = new Thread[threadCount];
-        
+        this.threadPollItems = new ThreadPoolItem[threadCount];
         this.collection = new BlockingCollection<Action>();
 
         for (int i = 0; i < threadCount; i++)
         {
-            threads[i] = new Thread(() =>
-            {
-                while (true)
-                {
-                    if (collection.TryTake(out Action action))
-                    {
-                        action();
-                    }
-                }
-            });
-        }
-
-        foreach (Thread thread in threads)
-        {
-            thread.Start();
+            threadPollItems[i] = new ThreadPoolItem(collection);
+            threadPollItems[i].Start();
         }
     }
 
     public IMyTask<TResult> Submit<TResult>(Func<TResult> operation)
     {
-        var task = new MyTask<TResult>(operation, this);
-        collection.Add(() => task.Start());
-        return task;
+        lock (locker)
+        {
+            var task = new MyTask<TResult>(operation, this);
+            collection.Add(() => task.Start());
+
+            return task;
+        }
     }
 
     public void Shutdown()
@@ -48,7 +40,10 @@ public class MyThreadPool
         {
             if (!collection.TryTake(out Action _))
             {
-                break;
+                foreach (var item in threadPollItems)
+                {
+                    item.Join();
+                }
             }
         }
     }
@@ -56,22 +51,25 @@ public class MyThreadPool
     private class ThreadPoolItem
     {
         private readonly Thread thread;
-        private readonly BlockingCollection<Action> collection;
 
         public ThreadPoolItem(BlockingCollection<Action> collection)
         {
-            this.collection = collection;
-
             thread = new Thread(() =>
             {
-                while (true)
+                while (!collection.IsAddingCompleted)
                 {
-                    if (collection.TryTake(out Action action))
+                    if (collection.TryTake(out var action))
                     {
                         action();
                     }
                 }
             });
         }
+
+        public void Start()
+            => thread.Start();
+
+        public void Join()
+            => thread.Join();
     }
 }

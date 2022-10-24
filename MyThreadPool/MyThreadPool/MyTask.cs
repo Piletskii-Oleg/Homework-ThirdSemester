@@ -1,10 +1,16 @@
 ﻿namespace MyThreadPool;
 
+using System.Collections.Concurrent;
+
 public class MyTask<T> : IMyTask<T>
 {
     private readonly Func<T> operation;
     private readonly MyThreadPool threadPool;
     private readonly object locker = new ();
+
+    private readonly ManualResetEvent resetEvent = new (false);
+
+    private T result;
 
     public MyTask(Func<T> operation, MyThreadPool threadPool)
     {
@@ -18,37 +24,30 @@ public class MyTask<T> : IMyTask<T>
     {
         get
         {
-            if (IsCompleted)
-            {
-                return Result;
-            }
-            else
-            {
-                throw new NotImplementedException(); //NotCalculatedYet
-            }
+            resetEvent.WaitOne();
+            return result;
         }
 
-        private set { }
+        private set => result = value;
     }
 
     public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<T, TNewResult> operation)
     {
-        while (!IsCompleted)
+        if (!IsCompleted)
         {
-            
+            resetEvent.WaitOne();
         }
 
-        var task = new MyTask<TNewResult>(new Func<TNewResult>(() => operation(Result)), threadPool);
-        threadPool.Submit(task.operation);
-        return task;
+        return threadPool.Submit(new Func<TNewResult>(() => operation(Result)));
     }
 
     public void Start()
     {
         lock (locker)
         {
-            Result = operation();
+            Result = operation.Invoke();
             IsCompleted = true;
+            resetEvent.Set();
         }
     }
 }
