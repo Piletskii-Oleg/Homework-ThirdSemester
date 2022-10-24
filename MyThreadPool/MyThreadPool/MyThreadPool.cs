@@ -1,49 +1,83 @@
 ﻿namespace MyThreadPool;
 
+using Exceptions;
 using System.Collections.Concurrent;
 
+/// <summary>
+/// Thread pool on which calculations can be performed via <see cref="IMyTask{TResult}"/>.
+/// </summary>
 public class MyThreadPool
 {
     private readonly object locker = new ();
 
-    private readonly ThreadPoolItem[] threadPollItems;
-
+    private readonly ThreadPoolItem[] threadPoolItems;
     private readonly BlockingCollection<Action> collection;
 
+    private readonly ManualResetEvent resetEvent = new (false);
+    private readonly CancellationTokenSource source = new ();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
+    /// </summary>
+    /// <param name="threadCount">Amount of threads on thread pool.</param>
+    /// <exception cref="IncorrectThreadCountException">Throws if the amount of threads was lesser or equal than 0.</exception>
     public MyThreadPool(int threadCount)
     {
-        this.threadPollItems = new ThreadPoolItem[threadCount];
+        if (threadCount <= 0)
+        {
+            throw new IncorrectThreadCountException();
+        }
+
+        this.threadPoolItems = new ThreadPoolItem[threadCount];
         this.collection = new BlockingCollection<Action>();
 
         for (int i = 0; i < threadCount; i++)
         {
-            threadPollItems[i] = new ThreadPoolItem(collection);
-            threadPollItems[i].Start();
+            this.threadPoolItems[i] = new ThreadPoolItem(this.collection, this.resetEvent, this.source.Token);
+            this.threadPoolItems[i].Start();
         }
     }
 
+    /// <summary>
+    /// Puts <paramref name="operation"/> on the queue and returns <see cref="IMyTask{TResult}"/> with value that will be calculated.
+    /// </summary>
+    /// <typeparam name="TResult">Value type.</typeparam>
+    /// <param name="operation">A calculation to perform.</param>
+    /// <returns><see cref="IMyTask{TResult}"/> with value that will be calculated.</returns>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> operation)
     {
-        lock (locker)
+        lock (this.locker)
         {
             var task = new MyTask<TResult>(operation, this);
-            collection.Add(() => task.Start());
+            this.collection.Add(() => task.Start());
 
             return task;
         }
     }
 
+    /// <summary>
+    /// Disables submitting and waits until every calculation in the queue is performed.
+    /// </summary>
     public void Shutdown()
     {
-        collection.CompleteAdding();
+        this.collection.CompleteAdding();
+
         while (true)
         {
-            if (!collection.TryTake(out Action _))
+            if (this.collection.Count == 0)
             {
-                foreach (var item in threadPollItems)
+                this.source.Cancel();
+                foreach (var item in this.threadPoolItems)
                 {
+                    if (item.IsActive)
+                    {
+                        this.resetEvent.WaitOne();
+                    }
+
                     item.Join();
                 }
+
+                break;
             }
         }
     }
@@ -51,25 +85,51 @@ public class MyThreadPool
     private class ThreadPoolItem
     {
         private readonly Thread thread;
+        private readonly BlockingCollection<Action> collection;
 
-        public ThreadPoolItem(BlockingCollection<Action> collection)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThreadPoolItem"/> class.
+        /// </summary>
+        /// <param name="collection"><see cref="BlockingCollection{T}"/> from <see cref="MyThreadPool"/>.</param>
+        /// <param name="resetEvent"><see cref="ManualResetEvent"/> used to indicate whether <see cref="thread"/> is performing a calculation.</param>
+        /// <param name="token">Cancellation token from <see cref="source"/>.</param>
+        public ThreadPoolItem(BlockingCollection<Action> collection, ManualResetEvent resetEvent, CancellationToken token)
         {
-            thread = new Thread(() =>
+            this.collection = collection;
+
+            this.thread = new Thread(() =>
             {
-                while (!collection.IsAddingCompleted)
+                while (!token.IsCancellationRequested)
                 {
-                    if (collection.TryTake(out var action))
+                    if (this.collection.TryTake(out var action))
                     {
+                        resetEvent.Reset();
+                        this.IsActive = true;
+
                         action();
+
+                        resetEvent.Set();
+                        this.IsActive = false;
                     }
                 }
             });
         }
 
-        public void Start()
-            => thread.Start();
+        /// <summary>
+        /// Gets a value indicating whether <see cref="ThreadPoolItem"/>'s thread is performing a calculation.
+        /// </summary>
+        public bool IsActive { get; private set; }
 
+        /// <summary>
+        /// Starts the stored <see cref="thread"/>.
+        /// </summary>
+        public void Start()
+            => this.thread.Start();
+
+        /// <summary>
+        /// Stops the stored <see cref="thread"/>.
+        /// </summary>
         public void Join()
-            => thread.Join();
+            => this.thread.Join();
     }
 }
