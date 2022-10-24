@@ -1,5 +1,7 @@
 ﻿namespace Matrix;
 
+using Exceptions;
+
 /// <summary>
 /// Class that allows you to perform certain operations on matrices.
 /// </summary>
@@ -97,7 +99,7 @@ public class Matrix
             throw new IncompatibleMatrixSizesException();
         }
 
-        var matrix = new Matrix(firstMatrix.Height, secondMatrix.Width);
+        var resultMatrix = new Matrix(firstMatrix.Height, secondMatrix.Width);
         var threads = new Thread[Environment.ProcessorCount];
         int lineWidth = (int)Math.Ceiling((decimal)firstMatrix.Height / Environment.ProcessorCount);
         var maxRows = new int[threads.Length];
@@ -117,7 +119,7 @@ public class Matrix
                     {
                         for (int k = 0; k < firstMatrix.Width; k++)
                         {
-                            matrix.matrix[i, j] += firstMatrix[i, k] * secondMatrix[k, j];
+                            resultMatrix.matrix[i, j] += firstMatrix[i, k] * secondMatrix[k, j];
                         }
                     }
                 }
@@ -134,7 +136,7 @@ public class Matrix
             thread.Join();
         }
 
-        return matrix;
+        return resultMatrix;
     }
 
     /// <summary>
@@ -146,16 +148,16 @@ public class Matrix
     /// <returns>Generated matrix.</returns>
     public static Matrix Generate(int height, int width, int maxNumber)
     {
-        var matrix = new Matrix(height, width);
+        var generatedMatrix = new Matrix(height, width);
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
-                matrix.matrix[i, j] = RandomValue.Next(maxNumber);
+                generatedMatrix.matrix[i, j] = RandomValue.Next(maxNumber);
             }
         }
 
-        return matrix;
+        return generatedMatrix;
     }
 
     /// <summary>

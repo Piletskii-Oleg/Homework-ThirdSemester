@@ -1,3 +1,5 @@
+using Matrix.Exceptions;
+
 namespace Matrix.Tests;
 
 public class Tests
@@ -9,8 +11,13 @@ public class Tests
         string path2 = "../../../TestFiles/matrix2.txt";
         var matrixParallel = Matrix.MultiplyParallel(new Matrix(path1), new Matrix(path2));
         var matrixSequential = Matrix.MultiplySequential(new Matrix(path1), new Matrix(path2));
-        Assert.That(matrixParallel.Height, Is.EqualTo(matrixSequential.Height));
-        Assert.That(matrixParallel.Width, Is.EqualTo(matrixSequential.Width));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(matrixParallel.Height, Is.EqualTo(matrixSequential.Height));
+            Assert.That(matrixParallel.Width, Is.EqualTo(matrixSequential.Width));
+        });
+
         for (int i = 0; i < matrixParallel.Height; i++)
         {
             for (int j = 0; j < matrixParallel.Width; j++)
