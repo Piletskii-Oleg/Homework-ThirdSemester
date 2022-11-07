@@ -1,5 +1,5 @@
 ﻿using System.Threading.Channels;
 using MyFTP;
 
-var a = await Client.List("localhost", 8888, "05-networks-1");
-Console.WriteLine(a);
+var b = await Client.Get("localhost", 8888, "EULA.txt");
+Console.WriteLine(b);

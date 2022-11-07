@@ -26,33 +26,24 @@ public class Server
         }
     }
 
-    public async Task Query(Socket socket)
+    private async Task Query(Socket socket)
     {
-        Console.WriteLine("Подключен клиент.");
         var stream = new NetworkStream(socket);
-
-        Console.WriteLine("Клиент соединен.");
         var reader = new StreamReader(stream);
 
-        Console.WriteLine("Чтение файлов...");
         var input = await reader.ReadLineAsync();
-
-        Console.WriteLine("Чтение окончено.");
         var inputSplit = input.Split();
 
         if (inputSplit[0] == "List")
         {
             await List(inputSplit[1], stream);
-            socket.Close();
         }
         else if (inputSplit[0] == "Get")
         {
-            await Get(inputSplit[1]);
-            socket.Close();
+            await Get(inputSplit[1], stream);
         }
         else
         {
-            socket.Close();
             throw new NotImplementedException();
         }
     }
@@ -86,8 +77,22 @@ public class Server
         
     }
 
-    private async Task<string> Get(string path)
+    private async Task Get(string path, NetworkStream stream)
     {
-        return "";
+        await Task.Run(async () =>
+        {
+            using var writer = new StreamWriter(stream);
+            using var binaryWriter = new BinaryWriter(stream);
+            path = Path.Combine(this.serverPath, path);
+
+            var info = new FileInfo(path);
+            await writer.WriteAsync($"{info.Length} ");
+
+            var result = File.ReadAllLines(path);
+            for (int i = 0; i < result.Length; i++)
+            {
+                await writer.WriteLineAsync(result[i]);
+            }
+        });
     }
 }

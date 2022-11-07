@@ -2,8 +2,9 @@
 
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
-public class Client
+public static class Client
 {
     public static async Task<string> List(string uri, int port, string path)
     {
@@ -15,22 +16,25 @@ public class Client
         await writer.FlushAsync();
 
         var reader = new StreamReader(stream);
-        var data = await reader.ReadLineAsync();
-        return data;
+        return await reader.ReadLineAsync();
     }
 
     public static async Task<string> Get(string uri, int port, string path)
     {
         using var client = new TcpClient(uri, port);
-
         var stream = client.GetStream();
 
         var writer = new StreamWriter(stream);
-        writer.Write("Get " + path);
-        writer.Flush();
+        await writer.WriteLineAsync("Get " + path);
+        await writer.FlushAsync();
 
         var reader = new StreamReader(stream);
-        var data = await reader.ReadToEndAsync();
-        return data;
+        var result = new StringBuilder();
+        while (client.Connected)
+        {
+            result.Append(await reader.ReadLineAsync());
+        }
+
+        return result.ToString();
     }
 }
