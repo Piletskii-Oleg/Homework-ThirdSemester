@@ -6,7 +6,7 @@ using System.Text;
 
 public static class Client
 {
-    public static async Task<string> List(string uri, int port, string path)
+    public static async Task<string?> List(string uri, int port, string path)
     {
         using var client = new TcpClient(uri, port);
         var stream = client.GetStream();
@@ -29,12 +29,6 @@ public static class Client
         await writer.FlushAsync();
 
         var reader = new StreamReader(stream);
-        var result = new StringBuilder();
-        while (client.Connected)
-        {
-            result.Append(await reader.ReadLineAsync());
-        }
-
-        return result.ToString();
+        return await reader.ReadToEndAsync();
     }
 }

@@ -5,7 +5,7 @@ using System.Net.Sockets;
 
 public class Server
 {
-    private TcpListener listener;
+    private readonly TcpListener listener;
     private readonly string serverPath;
 
     public Server(string path, int port)
@@ -32,15 +32,20 @@ public class Server
         var reader = new StreamReader(stream);
 
         var input = await reader.ReadLineAsync();
+        if (input == null)
+        {
+            throw new InvalidOperationException();
+        }
+
         var inputSplit = input.Split();
 
         if (inputSplit[0] == "List")
         {
-            await List(inputSplit[1], stream);
+            List(inputSplit[1], stream);
         }
         else if (inputSplit[0] == "Get")
         {
-            await Get(inputSplit[1], stream);
+            Get(inputSplit[1], stream);
         }
         else
         {
@@ -48,11 +53,12 @@ public class Server
         }
     }
 
-    private async Task List(string path, NetworkStream stream)
+    private void List(string path, NetworkStream stream)
     {
-        await Task.Run(async () =>
+        Task.Run(async () =>
         {
             var writer = new StreamWriter(stream);
+
             path = Path.Combine(this.serverPath, path);
             var files = Directory.GetFiles(path);
             var directories = Directory.GetDirectories(path);
@@ -72,14 +78,16 @@ public class Server
 
             await writer.WriteLineAsync();
             await writer.FlushAsync();
-        });
 
-        
+            stream.Socket.Close();
+            await stream.DisposeAsync();
+        });
     }
 
-    private async Task Get(string path, NetworkStream stream)
+
+    private void Get(string path, NetworkStream stream)
     {
-        await Task.Run(async () =>
+        Task.Run(async () =>
         {
             using var writer = new StreamWriter(stream);
             using var binaryWriter = new BinaryWriter(stream);
@@ -88,11 +96,17 @@ public class Server
             var info = new FileInfo(path);
             await writer.WriteAsync($"{info.Length} ");
 
-            var result = File.ReadAllLines(path);
-            for (int i = 0; i < result.Length; i++)
+            var reader = new BinaryReader(File.OpenRead(path));
+            for (int i = 0; i < info.Length; i++)
             {
-                await writer.WriteLineAsync(result[i]);
+                stream.WriteByte(reader.ReadByte());
+                stream.Flush();
             }
+
+            stream.Flush();
+            
+            stream.Socket.Close();
+            await stream.DisposeAsync();
         });
     }
 }
