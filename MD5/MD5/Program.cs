@@ -24,7 +24,6 @@ class Program
             try
             {
                 ComputeTimes(sum.CalculateSequential, path, numberOfTries);
-
                 await ComputeTimesParallel(sum.CalculateParallel, path, numberOfTries);
             }
             catch (UnauthorizedAccessException)
