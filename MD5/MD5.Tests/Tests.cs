@@ -7,7 +7,7 @@ public class Tests
     [Test]
     public async Task ParallelAndSubsequentHashCalculationsGiveSameResult()
     {
-        var path = "../../../TestFiles";
+        var path = "../../../TestFiles/";
         var sumSequential = checkSum.CalculateSequential(path);
         Thread.Sleep(1000);
 
