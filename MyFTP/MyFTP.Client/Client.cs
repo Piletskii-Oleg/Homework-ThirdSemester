@@ -15,7 +15,8 @@ public class Client
 
     public async Task<string?> List(string path)
     {
-        using var client = new TcpClient(uri, port);
+        using var client = new TcpClient();
+        await client.ConnectAsync(uri, port);
         await using var stream = client.GetStream();
 
         using var writer = new StreamWriter(stream);
@@ -28,7 +29,8 @@ public class Client
 
     public async Task Get(string path, string newPath)
     {
-        using var client = new TcpClient(uri, port);
+        using var client = new TcpClient();
+        await client.ConnectAsync(uri, port);
         await using var stream = client.GetStream();
 
         await using var writer = new StreamWriter(stream);

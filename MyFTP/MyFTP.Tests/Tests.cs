@@ -2,15 +2,13 @@ namespace MyFTP.Tests;
 
 public class Tests
 {
-    private Server server;
-    private Client client;
+    private readonly Server server = new ("../../../TestFiles/", 8888);
+    private readonly Client client = new ("localhost", 8888);
 
-    [SetUp]
+    [OneTimeSetUp]
     public async Task Setup()
     {
-        server = new Server("../../../TestFiles/", 8888);
         await server.Start();
-        client = new Client("localhost", 8888);
     }
 
     [Test]

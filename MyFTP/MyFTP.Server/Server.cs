@@ -5,23 +5,23 @@ using System.Net.Sockets;
 
 public class Server
 {
-    private readonly TcpListener listener;
     private readonly string serverPath;
+    private readonly int port;
 
     public Server(string path, int port)
     {
         this.serverPath = path;
-
-        listener = new TcpListener(IPAddress.Any, port);
+        this.port = port;
     }
 
     public async Task Start()
     {
+        var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
 
         while (true)
         {
-            var socket = listener.AcceptSocket();
+            var socket = await listener.AcceptSocketAsync();
             await Query(socket);
         }
     }
