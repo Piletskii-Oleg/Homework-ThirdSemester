@@ -58,27 +58,37 @@ public class Server
         var writer = new StreamWriter(stream);
 
         path = Path.Combine(this.serverPath, path);
-        var files = Directory.GetFiles(path);
-        var directories = Directory.GetDirectories(path);
 
-        var fileCount = files.Length + directories.Length;
-        await writer.WriteAsync($"{fileCount}");
-
-        foreach (var file in files)
+        try
         {
-            await writer.WriteAsync($" {file} {false}");
-        }
+            var files = Directory.GetFiles(path);
+            var directories = Directory.GetDirectories(path);
 
-        foreach (var directory in directories)
+            var fileCount = files.Length + directories.Length;
+            await writer.WriteAsync($"{fileCount}");
+
+            foreach (var file in files)
+            {
+                await writer.WriteAsync($" {file} {false}");
+            }
+
+            foreach (var directory in directories)
+            {
+                await writer.WriteAsync($" {directory} {true}");
+            }
+
+            await writer.WriteLineAsync();
+            await writer.FlushAsync();
+        }
+        catch (DirectoryNotFoundException)
         {
-            await writer.WriteAsync($" {directory} {true}");
+            await stream.WriteAsync(BitConverter.GetBytes((long)-1));
         }
-
-        await writer.WriteLineAsync();
-        await writer.FlushAsync();
-
-        stream.Socket.Close();
-        await stream.DisposeAsync();
+        finally
+        {
+            stream.Socket.Close();
+            await stream.DisposeAsync();
+        }
     }
 
 
@@ -89,24 +99,29 @@ public class Server
         path = Path.Combine(this.serverPath, path);
 
         var info = new FileInfo(path);
-        if (!info.Exists)
-        {
-            throw new FileNotFoundException();
-        }
 
-        await stream.WriteAsync(BitConverter.GetBytes(info.Length));
-
-        using var reader = new BinaryReader(File.OpenRead(path));
-        for (int i = 0; i < info.Length; i++)
+        try
         {
-            var readByte = reader.ReadByte();
-            stream.WriteByte(readByte);
+            await stream.WriteAsync(BitConverter.GetBytes(info.Length));
+
+            using var reader = new BinaryReader(File.OpenRead(path));
+            for (int i = 0; i < info.Length; i++)
+            {
+                var readByte = reader.ReadByte();
+                stream.WriteByte(readByte);
+                await stream.FlushAsync();
+            }
+
             await stream.FlushAsync();
         }
-
-        await stream.FlushAsync();
-
-        stream.Socket.Close();
-        await stream.DisposeAsync();
+        catch (FileNotFoundException)
+        {
+            await stream.WriteAsync(BitConverter.GetBytes((long)-1));
+        }
+        finally
+        {
+            stream.Socket.Close();
+            await stream.DisposeAsync();
+        }
     }
 }

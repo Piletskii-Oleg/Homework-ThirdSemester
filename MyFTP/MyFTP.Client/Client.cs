@@ -42,6 +42,10 @@ public class Client
         var byteLength = new byte[8];
         await stream.ReadAsync(byteLength);
         var length = BitConverter.ToInt64(byteLength);
+        if (length == -1)
+        {
+            throw new FileNotFoundException();
+        }
 
         for (int i = 0; i < length; i++)
         {
