@@ -1,0 +1,1 @@
+3 C:\Users\Oleg\Documents\GitHub\Homework-SecondYear\MyFTP\MyFTP.Tests\TestFiles\dog.jpg False C:\Users\Oleg\Documents\GitHub\Homework-SecondYear\MyFTP\MyFTP.Tests\TestFiles\TextFile.txt False C:\Users\Oleg\Documents\GitHub\Homework-SecondYear\MyFTP\MyFTP.Tests\TestFiles\Folder True
