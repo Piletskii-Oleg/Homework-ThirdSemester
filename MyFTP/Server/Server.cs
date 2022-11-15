@@ -41,11 +41,11 @@ public class Server
 
         if (inputSplit[0] == "List")
         {
-            List(inputSplit[1], stream);
+            await List(inputSplit[1], stream);
         }
         else if (inputSplit[0] == "Get")
         {
-            Get(inputSplit[1], stream);
+            await Get(inputSplit[1], stream);
         }
         else
         {
@@ -53,60 +53,60 @@ public class Server
         }
     }
 
-    private void List(string path, NetworkStream stream)
+    private async Task List(string path, NetworkStream stream)
     {
-        Task.Run(async () =>
+        var writer = new StreamWriter(stream);
+
+        path = Path.Combine(this.serverPath, path);
+        var files = Directory.GetFiles(path);
+        var directories = Directory.GetDirectories(path);
+
+        var fileCount = files.Length + directories.Length;
+        await writer.WriteAsync($"{fileCount}");
+
+        foreach (var file in files)
         {
-            var writer = new StreamWriter(stream);
+            await writer.WriteAsync($" {file} {false}");
+        }
 
-            path = Path.Combine(this.serverPath, path);
-            var files = Directory.GetFiles(path);
-            var directories = Directory.GetDirectories(path);
+        foreach (var directory in directories)
+        {
+            await writer.WriteAsync($" {directory} {true}");
+        }
 
-            var fileCount = files.Length + directories.Length;
-            await writer.WriteAsync($"{fileCount}");
+        await writer.WriteLineAsync();
+        await writer.FlushAsync();
 
-            foreach (var file in files)
-            {
-                await writer.WriteAsync($" {file} {false}");
-            }
-
-            foreach (var directory in directories)
-            {
-                await writer.WriteAsync($" {directory} {true}");
-            }
-
-            await writer.WriteLineAsync();
-            await writer.FlushAsync();
-
-            stream.Socket.Close();
-            await stream.DisposeAsync();
-        });
+        stream.Socket.Close();
+        await stream.DisposeAsync();
     }
 
 
-    private void Get(string path, NetworkStream stream)
+    private async Task Get(string path, NetworkStream stream)
     {
-        Task.Run(async () =>
+        await using var writer = new StreamWriter(stream);
+        await using var binaryWriter = new BinaryWriter(stream);
+        path = Path.Combine(this.serverPath, path);
+
+        var info = new FileInfo(path);
+        if (!info.Exists)
         {
-            using var writer = new StreamWriter(stream);
-            using var binaryWriter = new BinaryWriter(stream);
-            path = Path.Combine(this.serverPath, path);
+            throw new FileNotFoundException();
+        }
 
-            var info = new FileInfo(path);
-            await writer.WriteAsync($"{info.Length} ");
+        await stream.WriteAsync(BitConverter.GetBytes(info.Length));
 
-            var reader = new BinaryReader(File.OpenRead(path));
-            for (int i = 0; i < info.Length; i++)
-            {
-                stream.WriteByte(reader.ReadByte());
-                stream.Flush();
-            }
+        using var reader = new BinaryReader(File.OpenRead(path));
+        for (int i = 0; i < info.Length; i++)
+        {
+            var readByte = reader.ReadByte();
+            stream.WriteByte(readByte);
+            await stream.FlushAsync();
+        }
 
-            stream.Flush();
-            
-            stream.Socket.Close();
-            await stream.DisposeAsync();
-        });
+        await stream.FlushAsync();
+
+        stream.Socket.Close();
+        await stream.DisposeAsync();
     }
 }

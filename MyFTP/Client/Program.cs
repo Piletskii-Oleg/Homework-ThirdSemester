@@ -1,6 +1,4 @@
-﻿using System.Threading.Channels;
-using MyFTP;
+﻿using MyFTP;
 
-Console.WriteLine(await Client.List("localhost", 8888, ""));
-var b = await Client.Get("localhost", 8888, "EULA.txt");
-Console.WriteLine(b);
+var client = new Client("localhost", 8888);
+await client.Get("EULA.txt", @"C:\Games\Higurashi\Higurashi When They Cry Hou - Ch.3 Tatarigoroshi\EULA2.txt");
