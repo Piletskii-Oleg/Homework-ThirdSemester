@@ -39,11 +39,11 @@ public class Server
 
         var inputSplit = input.Split();
 
-        if (inputSplit[0] == "List")
+        if (inputSplit[0] == "1")
         {
             await List(inputSplit[1], stream);
         }
-        else if (inputSplit[0] == "Get")
+        else if (inputSplit[0] == "2")
         {
             await Get(inputSplit[1], stream);
         }

@@ -19,7 +19,7 @@ public class Client
         await using var stream = client.GetStream();
 
         using var writer = new StreamWriter(stream);
-        await writer.WriteLineAsync("List " + path);
+        await writer.WriteLineAsync($"1 {path}");
         await writer.FlushAsync();
 
         using var reader = new StreamReader(stream);
@@ -32,7 +32,7 @@ public class Client
         await using var stream = client.GetStream();
 
         await using var writer = new StreamWriter(stream);
-        await writer.WriteLineAsync("Get " + path);
+        await writer.WriteLineAsync($"2 {path}");
         await writer.FlushAsync();
 
         using var localWriter = new BinaryWriter(File.Create(newPath));

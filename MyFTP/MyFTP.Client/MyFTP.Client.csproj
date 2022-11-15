@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Server\MyFTP.Server.csproj" />
+    <ProjectReference Include="..\MyFTP.Server\MyFTP.Server.csproj" />
   </ItemGroup>
 
 </Project>
