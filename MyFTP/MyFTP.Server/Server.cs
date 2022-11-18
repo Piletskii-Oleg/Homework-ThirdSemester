@@ -8,9 +8,20 @@ public class Server
     private readonly string serverPath;
     private readonly int port;
 
+    private readonly CancellationTokenSource tokenSource = new ();
+    private readonly List<Task> commands = new ();
+
     public Server(string path, int port)
     {
-        this.serverPath = path;
+        if (Directory.Exists(path))
+        {
+            this.serverPath = path;
+        }
+        else
+        {
+            throw new DirectoryNotFoundException();
+        }
+
         this.port = port;
     }
 
@@ -19,12 +30,17 @@ public class Server
         var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
 
-        while (true)
+        while (!tokenSource.IsCancellationRequested)
         {
             var socket = await listener.AcceptSocketAsync();
-            await Query(socket);
+            commands.Add(Task.Run(async () => await Query(socket)));
         }
+
+        Task.WaitAll(commands.ToArray());
     }
+
+    public void Stop()
+        => tokenSource.Cancel();
 
     private async Task Query(Socket socket)
     {
@@ -38,7 +54,6 @@ public class Server
         }
 
         var inputSplit = input.Split();
-
         if (inputSplit[0] == "1")
         {
             await List(inputSplit[1], stream);
@@ -49,7 +64,7 @@ public class Server
         }
         else
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException();
         }
     }
 

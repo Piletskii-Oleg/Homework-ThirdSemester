@@ -1,16 +1,22 @@
 ﻿namespace MyFTP;
 
-using System.Text;
+using System.Net;
 using System.Net.Sockets;
 
 public class Client
 {
-    private readonly string uri;
+    private readonly IPAddress uri;
     private readonly int port;
+
+    public Client(IPAddress uri, int port)
+    {
+        this.uri = uri;
+        this.port = port;
+    }
 
     public Client(string uri, int port)
     {
-        this.uri = uri;
+        this.uri = IPAddress.Parse(uri);
         this.port = port;
     }
 
@@ -28,7 +34,7 @@ public class Client
         return await reader.ReadToEndAsync();
     }
 
-    public async Task<long> Get(string path, string newPath)
+    public async Task Get(string path, string newPath)
     {
         using var client = new TcpClient();
         await client.ConnectAsync(uri, port);
@@ -38,8 +44,6 @@ public class Client
         await writer.WriteLineAsync($"2 {path}");
         await writer.FlushAsync();
 
-        await using var localWriter = new FileStream(newPath, FileMode.Create);
-
         var byteLength = new byte[8];
         await stream.ReadAsync(byteLength);
         var length = BitConverter.ToInt64(byteLength);
@@ -48,7 +52,7 @@ public class Client
             throw new FileNotFoundException();
         }
 
+        await using var localWriter = new FileStream(newPath, FileMode.Create);
         await stream.CopyToAsync(localWriter);
-        return length;
     }
 }

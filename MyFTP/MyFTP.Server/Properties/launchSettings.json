@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MyFTP.Server": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Oleg\\Documents\\GitHub\\Homework-SecondYear\\MyFTP\\MyFTP.Server 8888"
+    }
+  }
+}

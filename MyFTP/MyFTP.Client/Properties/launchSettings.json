@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MyFTP.Client": {
+      "commandName": "Project",
+      "commandLineArgs": "127.0.0.1 8888 -get Program.cs prog.cs"
+    }
+  }
+}
