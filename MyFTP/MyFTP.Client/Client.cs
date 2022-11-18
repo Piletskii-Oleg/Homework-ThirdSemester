@@ -31,7 +31,13 @@ public class Client
         await writer.FlushAsync();
 
         using var reader = new StreamReader(stream);
-        return await reader.ReadToEndAsync();
+        var result = await reader.ReadToEndAsync();
+        if (result == "-1")
+        {
+            throw new DirectoryNotFoundException();
+        }
+
+        return result;
     }
 
     public async Task Get(string path, string newPath)

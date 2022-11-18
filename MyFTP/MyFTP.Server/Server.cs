@@ -98,7 +98,8 @@ public class Server
         }
         catch (DirectoryNotFoundException)
         {
-            await stream.WriteAsync(BitConverter.GetBytes(-1));
+            await writer.WriteAsync("-1");
+            await writer.FlushAsync();
         }
         finally
         {
@@ -125,6 +126,7 @@ public class Server
         catch (FileNotFoundException)
         {
             await stream.WriteAsync(BitConverter.GetBytes((long)-1));
+            await stream.FlushAsync();
         }
         finally
         {
