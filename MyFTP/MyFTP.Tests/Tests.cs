@@ -6,10 +6,8 @@ public class Tests
     private readonly Client client = new ("localhost", 8888);
 
     [OneTimeSetUp]
-    public void Setup()
-    {
-        Task.Run(async () => await server.Start());
-    }
+    public void OneTimeSetup()
+        => Task.Run(async () => await server.Start());
 
     [Test]
     public async Task ListShouldWorkProperly()
