@@ -29,7 +29,7 @@ public class Server
     private async Task Query(Socket socket)
     {
         var stream = new NetworkStream(socket);
-        var reader = new StreamReader(stream);
+        using var reader = new StreamReader(stream);
 
         var input = await reader.ReadLineAsync();
         if (input == null)
@@ -55,7 +55,7 @@ public class Server
 
     private async Task List(string path, NetworkStream stream)
     {
-        var writer = new StreamWriter(stream);
+        using var writer = new StreamWriter(stream);
 
         path = Path.Combine(this.serverPath, path);
 
@@ -70,19 +70,20 @@ public class Server
             foreach (var file in files)
             {
                 await writer.WriteAsync($" {file} {false}");
+                await writer.FlushAsync();
             }
 
             foreach (var directory in directories)
             {
                 await writer.WriteAsync($" {directory} {true}");
+                await writer.FlushAsync();
             }
 
-            await writer.WriteLineAsync();
             await writer.FlushAsync();
         }
         catch (DirectoryNotFoundException)
         {
-            await stream.WriteAsync(BitConverter.GetBytes((long)-1));
+            await stream.WriteAsync(BitConverter.GetBytes(-1));
         }
         finally
         {
@@ -95,24 +96,16 @@ public class Server
     private async Task Get(string path, NetworkStream stream)
     {
         await using var writer = new StreamWriter(stream);
-        await using var binaryWriter = new BinaryWriter(stream);
         path = Path.Combine(this.serverPath, path);
-
         var info = new FileInfo(path);
 
         try
         {
             await stream.WriteAsync(BitConverter.GetBytes(info.Length));
 
-            using var reader = new BinaryReader(File.OpenRead(path));
-            for (int i = 0; i < info.Length; i++)
-            {
-                var readByte = reader.ReadByte();
-                stream.WriteByte(readByte);
-                await stream.FlushAsync();
-            }
+            using var reader = new FileStream(path, FileMode.Open);
 
-            await stream.FlushAsync();
+            await reader.CopyToAsync(stream);
         }
         catch (FileNotFoundException)
         {

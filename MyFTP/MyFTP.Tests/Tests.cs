@@ -15,7 +15,8 @@ public class Tests
     public async Task ListShouldWorkProperly()
     {
         var list = await client.List("");
-        var expected = File.ReadAllText("../../../TestFiles/TextFile.txt");
+        var path = Path.Combine("..", "..", "..", "TestFiles", "TextFile.txt");
+        var expected = File.ReadAllText(path);
         Assert.That(list, Is.EqualTo(expected));
     }
 
@@ -23,8 +24,8 @@ public class Tests
     [TestCase("TextFile.txt")]
     public async Task GetShouldWorkProperly(string fileName)
     {
-        var originalPath = Path.Combine(@"..\..\..\TestFiles\", fileName);
-        var pathToCopy = Path.Combine(@"..\..\..\TestFiles\Folder", fileName);
+        var originalPath = Path.Combine(@"..", "..", "..", "TestFiles", fileName);
+        var pathToCopy = Path.Combine(@"..", "..", "..", "TestFiles", "Folder", fileName);
 
         await client.Get(fileName, pathToCopy);
         Assert.That(File.ReadAllBytes(originalPath), Is.EqualTo(File.ReadAllBytes(pathToCopy)));

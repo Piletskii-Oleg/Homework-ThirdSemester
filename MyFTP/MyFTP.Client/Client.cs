@@ -1,5 +1,6 @@
 ﻿namespace MyFTP;
 
+using System.Text;
 using System.Net.Sockets;
 
 public class Client
@@ -24,10 +25,10 @@ public class Client
         await writer.FlushAsync();
 
         using var reader = new StreamReader(stream);
-        return await reader.ReadLineAsync();
+        return await reader.ReadToEndAsync();
     }
 
-    public async Task Get(string path, string newPath)
+    public async Task<long> Get(string path, string newPath)
     {
         using var client = new TcpClient();
         await client.ConnectAsync(uri, port);
@@ -37,7 +38,7 @@ public class Client
         await writer.WriteLineAsync($"2 {path}");
         await writer.FlushAsync();
 
-        using var localWriter = new BinaryWriter(File.Create(newPath));
+        await using var localWriter = new FileStream(newPath, FileMode.Create);
 
         var byteLength = new byte[8];
         await stream.ReadAsync(byteLength);
@@ -47,14 +48,7 @@ public class Client
             throw new FileNotFoundException();
         }
 
-        for (int i = 0; i < length; i++)
-        {
-            var buffer = new byte[1];
-            await stream.ReadAsync(buffer).ConfigureAwait(false);
-
-            localWriter.Write(buffer);
-        }
-
-        localWriter.Flush();
+        await stream.CopyToAsync(localWriter);
+        return length;
     }
 }
