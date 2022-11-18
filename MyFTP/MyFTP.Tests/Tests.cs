@@ -36,14 +36,14 @@ public class Tests
     }
 
     [Test]
-    public void GetShouldThrowExceptionIfNoFileIsFound()
+    public void ListShouldThrowExceptionIfNoFileIsFound()
     {
         var path = Path.Combine(@"..", "..", "..", "TestFiles", "NotAFolder");
-        Assert.ThrowsAsync<FileNotFoundException>(async () => await client.List(path));
+        Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await client.List(path));
     }
 
     [Test]
-    public void ListShouldThrowExceptionIfNoDirectoryIsFound()
+    public void GetShouldThrowExceptionIfNoDirectoryIsFound()
     {
         var path = Path.Combine(@"..", "..", "..", "TestFiles", "sh3.exe");
         Assert.ThrowsAsync<FileNotFoundException>(async () => await client.Get(path, ""));
