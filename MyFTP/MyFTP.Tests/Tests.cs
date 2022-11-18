@@ -2,7 +2,7 @@ namespace MyFTP.Tests;
 
 public class Tests
 {
-    private readonly Server server = new (@"..\..\..\TestFiles\", 8888);
+    private readonly Server server = new (Path.Combine("..", "..", "..", "TestFiles"), 8888);
     private readonly Client client = new ("localhost", 8888);
 
     [OneTimeSetUp]
