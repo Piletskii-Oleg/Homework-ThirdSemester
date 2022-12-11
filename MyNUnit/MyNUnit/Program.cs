@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using MyNUnit.SDK.Attributes;
+﻿
 
 /*var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 foreach (var ass in assemblies)

@@ -1,7 +1,6 @@
 namespace MyNUnit.SDK.Attributes;
 
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class BeforeClassAttribute : Attribute
 {
-    
 }
