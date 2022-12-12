@@ -19,7 +19,8 @@ foreach (var ass in assemblies)
 }*/
 
 var path = @"C:\Users\Oleg\source\repos\TestProject\TestProject\bin\Debug\net6.0\";
-MyNUnit.MyNUnit.StartTests(path);
+var list = MyNUnit.MyNUnit.StartTests(path);
+var a = 0;
 
 // var assembly = Assembly.LoadFrom(path);
 // foreach (var type in assembly.DefinedTypes)

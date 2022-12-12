@@ -1,35 +1,43 @@
 ﻿namespace MyNUnit;
 
+using System.Collections.Concurrent;
 using System.Reflection;
+using Info;
 using SDK.Attributes;
 
 public static class MyNUnit
 {
-    public static void StartTests(string path)
+    public static List<AssemblyTestInfo> StartTests(string path)
     {
         var info = new DirectoryInfo(path);
         var dllFiles = from file in info.GetFiles()
             where file.Extension == ".dll"
             select file;
 
+        var assembliesInfo = new BlockingCollection<AssemblyTestInfo>();
         Parallel.ForEach(dllFiles, file =>
         {
             var assembly = Assembly.LoadFrom(file.FullName);
-            StartAssemblyTests(assembly);
+            assembliesInfo.Add(StartAssemblyTests(assembly));
         });
+
+        return assembliesInfo.ToList();
     }
 
-    private static void StartAssemblyTests(Assembly assembly)
+    private static AssemblyTestInfo StartAssemblyTests(Assembly assembly)
     {
         var suitableTypes = GetTypes(assembly);
+        var classesInfo = new BlockingCollection<ClassTestInfo>();
         Parallel.ForEach(suitableTypes, type =>
         {
             var instance = assembly.CreateInstance(type.FullName);
-            StartOneClass(type, instance);
+            classesInfo.Add(StartOneClass(type, instance));
         });
+
+        return new AssemblyTestInfo(assembly.GetName(), classesInfo.ToList());
     }
 
-    private static void StartOneClass(Type type, object instance)
+    private static ClassTestInfo StartOneClass(Type type, object instance)
     {
         var testMethods = GetMethods(type, typeof(TestAttribute));
         var afterMethods = GetMethods(type, typeof(AfterAttribute));
@@ -39,68 +47,42 @@ public static class MyNUnit
 
         Parallel.ForEach(beforeClassMethods, method => method.Invoke(null, null));
 
+        var methodsInfo = new List<MethodTestInfo>();
         foreach (var method in testMethods)
         {
             var testAttribute = GetTestAttribute(method);
             if (testAttribute.Ignored != null)
             {
-                Console.WriteLine($"Method {method.Name} is ignored. Reason: {testAttribute.Ignored}.\n");
+                methodsInfo.Add(new MethodTestInfo(method.Name, testAttribute.Ignored));
                 continue;
             }
 
-            var beforeMethodInfos = beforeMethods as MethodInfo[] ?? beforeMethods.ToArray();
-            Parallel.ForEach(beforeMethodInfos, beforeMethod => beforeMethod.Invoke(instance, null));
+            var beforeMethodsInfo = beforeMethods as MethodInfo[] ?? beforeMethods.ToArray();
+            Parallel.ForEach(beforeMethodsInfo, beforeMethod => beforeMethod.Invoke(instance, null));
             
-            StartMethod(instance, method, testAttribute);
+            methodsInfo.Add(StartMethod(instance, method, testAttribute));
             
-            var afterMethodInfos = afterMethods as MethodInfo[] ?? afterMethods.ToArray();
-            Parallel.ForEach(afterMethodInfos, afterMethod => afterMethod.Invoke(instance, null));
+            var afterMethodsInfo = afterMethods as MethodInfo[] ?? afterMethods.ToArray();
+            Parallel.ForEach(afterMethodsInfo, afterMethod => afterMethod.Invoke(instance, null));
         }
 
         Parallel.ForEach(afterClassMethods, method => method.Invoke(null, null));
+
+        return new ClassTestInfo(type.Name, methodsInfo);
     }
 
-    private static void StartMethod(object instance, MethodBase method, TestAttribute testAttribute)
+    private static MethodTestInfo StartMethod(object instance, MethodBase method, TestAttribute testAttribute)
     {
-        Console.WriteLine($"Starting method: {method.Name}");
-        var success = false;
-        var caughtException = false;
         try
         {
             method.Invoke(instance, null);
         }
         catch (Exception exception)
         {
-            caughtException = true;
-            if (exception.InnerException?.GetType() == testAttribute.Expected)
-            {
-                Console.WriteLine("Caught exception {testAttribute.Expected}.");
-                success = true;
-            }
-            else
-            {
-                Console.WriteLine($"Warning: unhandled exception: {exception.InnerException}.");
-                if (testAttribute.Expected != null)
-                {
-                    Console.WriteLine($"Exception of type {testAttribute.Expected} was expected.");
-                }
-            }
+            return new MethodTestInfo(method.Name, testAttribute.Expected, exception);
         }
-        finally
-        {
-            if (!caughtException && testAttribute.Expected != null)
-            {
-                Console.WriteLine($"Expected exception of type {testAttribute.Expected} but got nothing.");
-            }
-            else if (!caughtException && testAttribute.Expected == null)
-            {
-                success = true;
-            }
-        }
-
-        Console.WriteLine(success
-            ? $"Method {method.Name} has run successfully."
-            : $"Method {method.Name} has run unsuccessfully.");
+        
+        return new MethodTestInfo(method.Name, true);
     }
 
     private static TestAttribute GetTestAttribute(MethodInfo method)
