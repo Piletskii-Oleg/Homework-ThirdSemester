@@ -6,27 +6,33 @@
 /// <typeparam name="T">Variable type.</typeparam>
 public class LazySingleThread<T> : ILazy<T>
 {
-    private readonly Func<T> function;
-    private Func<T> result = () => throw new InvalidOperationException();
+    private Func<T?>? function;
+    private T? result;
+
     private bool isCalculated;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LazySingleThread{T}"/> class.
     /// </summary>
     /// <param name="function">Calculation that should be performed later.</param>
-    public LazySingleThread(Func<T> function)
+    public LazySingleThread(Func<T?>? function)
         => this.function = function;
 
     /// <inheritdoc/>
-    public T Get()
+    public T? Get()
     {
         if (!this.isCalculated)
         {
-            var calculatedValue = this.function();
-            this.result = () => calculatedValue;
+            if (this.function == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            this.result = this.function();
+            this.function = null;
             this.isCalculated = true;
         }
 
-        return this.result();
+        return this.result;
     }
 }

@@ -10,5 +10,5 @@ public interface ILazy<out T>
     /// Calculates value only once when it is called.
     /// </summary>
     /// <returns>Calculated value.</returns>
-    T Get();
+    T? Get();
 }

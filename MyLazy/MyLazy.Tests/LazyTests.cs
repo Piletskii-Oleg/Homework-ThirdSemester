@@ -35,7 +35,7 @@ public class LazyTests
         => Assert.That(lazy.Get(), Is.EqualTo(5));
 
     [TestCaseSource(nameof(LazyString))]
-    public void LazyStringValueIsCalculatedCorrectly(ILazy<string> lazy)
+    public void LazyStringValueIsCalculatedCorrectly(ILazy<string?> lazy)
         => Assert.That(lazy.Get(), Is.EqualTo("u234aaa3"));
 
     [TestCaseSource(nameof(LazyCurrentSecond))]
@@ -43,12 +43,12 @@ public class LazyTests
     {
         var currentSecond = DateTime.Now.Second;
         Assert.That(lazy.Get(), Is.EqualTo(currentSecond));
-        Thread.Sleep(2000);
+        Thread.Sleep(5000);
         Assert.That(lazy.Get(), Is.EqualTo(currentSecond));
     }
     
     [TestCaseSource(nameof(LazyNull))]
-    public void NullReturningFunctionShouldThrowException(ILazy<object> lazy)
+    public void NullReturningFunctionShouldNotThrowException(ILazy<object?> lazy)
         => Assert.DoesNotThrow(() => lazy.Get());
 
     [Test]
@@ -56,10 +56,10 @@ public class LazyTests
     {
         for (int j = 0; j < 10; j++)
         {
-            var threadNumber = 2000;
+            const int threadNumber = 100;
             var count = 0;
             var threads = new Thread[threadNumber];
-            var lazyMultiThread = new LazyMultiThread<int>(() => count++);
+            var lazyMultiThread = new LazyMultiThread<int>(() => Interlocked.Increment(ref count));
             for (int i = 0; i < threadNumber; i++)
             {
                 threads[i] = new Thread(() => lazyMultiThread.Get());
