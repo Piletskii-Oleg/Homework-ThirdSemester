@@ -13,5 +13,18 @@ public class ExceptionInfo
     public Exception? ActualException { get; }
 
     public bool AreExceptionsSame()
-        => ExpectedException == ActualException.InnerException.GetType();
+    {
+        if (ActualException?.InnerException == null)
+        {
+            return false;
+        }
+        else if (ExpectedException == ActualException.InnerException.GetType())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

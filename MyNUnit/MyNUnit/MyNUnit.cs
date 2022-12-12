@@ -60,7 +60,9 @@ public static class MyNUnit
             var beforeMethodsInfo = beforeMethods as MethodInfo[] ?? beforeMethods.ToArray();
             Parallel.ForEach(beforeMethodsInfo, beforeMethod => beforeMethod.Invoke(instance, null));
             
-            methodsInfo.Add(StartMethod(instance, method, testAttribute));
+            methodsInfo.Add(method.IsStatic
+                ? StartMethod(null, method, testAttribute)
+                : StartMethod(instance, method, testAttribute));
             
             var afterMethodsInfo = afterMethods as MethodInfo[] ?? afterMethods.ToArray();
             Parallel.ForEach(afterMethodsInfo, afterMethod => afterMethod.Invoke(instance, null));
@@ -71,7 +73,7 @@ public static class MyNUnit
         return new ClassTestInfo(type.Name, methodsInfo);
     }
 
-    private static MethodTestInfo StartMethod(object instance, MethodBase method, TestAttribute testAttribute)
+    private static MethodTestInfo StartMethod(object? instance, MethodBase method, TestAttribute testAttribute)
     {
         try
         {
@@ -105,5 +107,7 @@ public static class MyNUnit
             from method in type.GetMethods()
             from attribute in Attribute.GetCustomAttributes(method)
             where attribute.GetType() == typeof(TestAttribute)
+            where type.IsClass
+            where !type.IsAbstract
             select type).Distinct();
 }
