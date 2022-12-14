@@ -16,27 +16,21 @@ public class Matrix
     /// <param name="height">Amount of rows in the matrix.</param>
     /// <param name="width">Amount of columns in the matrix.</param>
     public Matrix(int height, int width)
-    {
-        this.matrix = new int[height, width];
-    }
+        => this.matrix = new int[height, width];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Matrix"/> class.
     /// </summary>
     /// <param name="matrix">A two-dimensional array to copy values from.</param>
     public Matrix(int[,] matrix)
-    {
-        this.matrix = matrix;
-    }
+        => this.matrix = matrix;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Matrix"/> class.
     /// </summary>
     /// <param name="path">Path to the file with the matrix.</param>
     public Matrix(string path)
-    {
-        this.matrix = ReadFromFile(path);
-    }
+        => this.matrix = ReadFromFile(path);
 
     /// <summary>
     /// Gets amount of rows in the matrix.
@@ -70,19 +64,19 @@ public class Matrix
             throw new IncompatibleMatrixSizesException();
         }
 
-        var matrix = new Matrix(firstMatrix.Height, secondMatrix.Width);
+        var resultMatrix = new Matrix(firstMatrix.Height, secondMatrix.Width);
         for (int i = 0; i < firstMatrix.Height; i++)
         {
             for (int j = 0; j < secondMatrix.Width; j++)
             {
                 for (int k = 0; k < firstMatrix.Width; k++)
                 {
-                    matrix.matrix[i, j] += firstMatrix[i, k] * secondMatrix[k, j];
+                    resultMatrix.matrix[i, j] += firstMatrix[i, k] * secondMatrix[k, j];
                 }
             }
         }
 
-        return matrix;
+        return resultMatrix;
     }
 
     /// <summary>
