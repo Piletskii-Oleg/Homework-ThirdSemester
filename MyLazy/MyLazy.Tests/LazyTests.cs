@@ -41,9 +41,14 @@ public class LazyTests
     [TestCaseSource(nameof(LazyCurrentSecond))]
     public void ChangingValueIsCalculatedOnlyOnce(ILazy<int> lazy)
     {
+        if (DateTime.Now.Millisecond > 900)
+        {
+            Thread.Sleep(200);
+        }
+        
         var currentSecond = DateTime.Now.Second;
         Assert.That(lazy.Get(), Is.EqualTo(currentSecond));
-        Thread.Sleep(5000);
+        Thread.Sleep(2000);
         Assert.That(lazy.Get(), Is.EqualTo(currentSecond));
     }
     
