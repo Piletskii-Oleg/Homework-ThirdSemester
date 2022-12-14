@@ -14,11 +14,11 @@ public class ExceptionInfo
 
     public bool AreExceptionsSame()
     {
-        if (ActualException?.InnerException == null)
+        if (ActualException == null)
         {
             return false;
         }
-        else if (ExpectedException == ActualException.InnerException.GetType())
+        else if (ExpectedException == ActualException.GetType())
         {
             return true;
         }

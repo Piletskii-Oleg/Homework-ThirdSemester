@@ -57,6 +57,7 @@ public class MethodTestInfo
         if (Ignored != null)
         {
             Console.WriteLine($"Ignored. Reason: {Ignored}");
+            Console.WriteLine();
             return;
         }
         
@@ -70,7 +71,10 @@ public class MethodTestInfo
             }
             
             Console.WriteLine($"Has caught exception {ExceptionInfo.ActualException}");
-            Console.WriteLine($"Exception that was expected: {ExceptionInfo.ExpectedException}");
+
+            Console.WriteLine(ExceptionInfo.ExpectedException == null
+                ? "Exception that was expected: none"
+                : $"Exception that was expected: {ExceptionInfo.ExpectedException}");
         }
 
         Console.WriteLine();
