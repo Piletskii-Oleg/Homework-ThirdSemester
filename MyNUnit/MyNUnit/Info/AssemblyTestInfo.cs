@@ -13,4 +13,12 @@ public class AssemblyTestInfo
         Name = name;
         ClassesInfo = classesInfo;
     }
+
+    public void Print()
+    {
+        foreach (var classInfo in ClassesInfo)
+        {
+            classInfo.Print();
+        }
+    }
 }

@@ -11,4 +11,16 @@ public class ClassTestInfo
         Name = name;
         MethodsInfo = methodsInfo;
     }
+
+    public void Print()
+    {
+        Console.WriteLine($"Class {Name}");
+
+        foreach (var methodInfo in MethodsInfo)
+        {
+            methodInfo.Print();
+        }
+
+        Console.WriteLine();
+    }
 }
