@@ -6,6 +6,7 @@ if (args.Length == 1)
 {
     var server = new Server(int.Parse(args[0]));
     await server.Start();
+    Console.WriteLine("Server opened");
     
     var sendTask = Task.Run(async () =>
     {
@@ -29,7 +30,8 @@ if (args.Length == 1)
 else if (args.Length == 2)
 {
     var client = new Client(args[0], int.Parse(args[1]));
-
+    Console.WriteLine("Client opened");
+    
     var sendTask = Task.Run(async () =>
     {
         while (!client.IsConnectionClosed)
