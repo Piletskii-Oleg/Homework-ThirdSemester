@@ -7,7 +7,7 @@ public class MethodTestInfo
 {
     public string Name { get; }
     
-    public bool IsSuccessful { get; }
+    public TestState State { get; }
 
     public TimeSpan completionTime;
     
@@ -17,51 +17,64 @@ public class MethodTestInfo
     
     public ExceptionInfo? ExceptionInfo { get; }
 
-    public MethodTestInfo(string name)
+    private MethodTestInfo(string name)
         => Name = name;
 
-    public MethodTestInfo(string name, string ignored)
+    private MethodTestInfo(string name, string ignored)
         : this (name)
-        => Ignored = ignored;
+    {
+        Ignored = ignored;
+        State = TestState.Ignored;
+    }
 
-    public MethodTestInfo(string name, bool isSuccessful)
+    private MethodTestInfo(string name, TestState testState)
         : this (name)
-        => IsSuccessful = isSuccessful;
+        => State = testState;
 
-    public MethodTestInfo(string name, Type? expectedException, Exception actualException)
+    private MethodTestInfo(string name, Type? expectedException, Exception actualException)
         : this (name)
     {
         HasCaughtException = true;
-
         ExceptionInfo = new ExceptionInfo(expectedException, actualException.InnerException);
-        IsSuccessful = ExceptionInfo.AreExceptionsSame();
+        
+        State = ExceptionInfo.AreExceptionsSame() ? TestState.Passed : TestState.Failed;
     }
 
-    public static MethodTestInfo StartTest(object? instance, MethodBase method, TestAttribute testAttribute)
+    public static MethodTestInfo StartTest(object? instance, MethodInfo method, TestAttribute testAttribute)
     {
+        if (testAttribute.Ignored != null)
+        {
+            return new MethodTestInfo(method.Name, testAttribute.Ignored);
+        }
+
+        if (method.GetParameters().Length != 0 || method.ReturnType != typeof(void))
+        {
+            throw new ArgumentException("Method should have no parameters and be of type void.", nameof(method));
+        }
+
         try
         {
             method.Invoke(instance, null);
         }
-        catch (Exception exception)
+        catch (TargetInvocationException exception)
         {
             return new MethodTestInfo(method.Name, testAttribute.Expected, exception);
         }
         
-        return new MethodTestInfo(method.Name, true);
+        return new MethodTestInfo(method.Name, TestState.Passed);
     }
 
     public void Print()
     {
         Console.WriteLine($"Method name: {Name}");
+        Console.WriteLine($"Test State: {State}");
+        
         if (Ignored != null)
         {
-            Console.WriteLine($"Ignored. Reason: {Ignored}");
+            Console.WriteLine($"Ignore reason: {Ignored}");
             Console.WriteLine();
             return;
         }
-        
-        Console.WriteLine($"Is successful: {IsSuccessful}");
 
         if (HasCaughtException)
         {

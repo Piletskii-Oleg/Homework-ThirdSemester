@@ -18,13 +18,11 @@ public class ExceptionInfo
         {
             return false;
         }
-        else if (ExpectedException == ActualException.GetType())
+        if (ExpectedException == ActualException.GetType())
         {
             return true;
         }
-        else
-        {
-            return false;
-        }
+        
+        return false;
     }
 }

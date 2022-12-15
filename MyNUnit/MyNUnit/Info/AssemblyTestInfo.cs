@@ -20,5 +20,7 @@ public class AssemblyTestInfo
         {
             classInfo.Print();
         }
+
+        Console.WriteLine();
     }
 }
