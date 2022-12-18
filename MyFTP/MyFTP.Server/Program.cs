@@ -1,4 +1,5 @@
 ﻿using MyFTP;
+using MyFTP.Server;
 
 if (args.Length != 2)
 {
@@ -33,4 +34,3 @@ if (int.TryParse(args[1], out int port))
     server.Stop();
     Console.WriteLine("Server stopped.");
 }
-        

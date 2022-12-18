@@ -1,6 +1,8 @@
 namespace MyFTP.Tests;
 
 using System.Net;
+using Client;
+using Server;
 
 public class Tests
 {
@@ -32,18 +34,18 @@ public class Tests
         var pathToCopy = Path.Combine(@"..", "..", "..", "TestFiles", "Folder", fileName);
 
         await client.Get(fileName, pathToCopy);
-        Assert.That(File.ReadAllBytes(originalPath), Is.EqualTo(File.ReadAllBytes(pathToCopy)));
+        Assert.That(await File.ReadAllBytesAsync(originalPath), Is.EqualTo(await File.ReadAllBytesAsync(pathToCopy)));
     }
 
     [Test]
-    public void ListShouldThrowExceptionIfNoFileIsFound()
+    public void ListShouldThrowExceptionIfNoDirectoryIsFound()
     {
         var path = Path.Combine(@"..", "..", "..", "TestFiles", "NotAFolder");
         Assert.ThrowsAsync<DirectoryNotFoundException>(async () => await client.List(path));
     }
 
     [Test]
-    public void GetShouldThrowExceptionIfNoDirectoryIsFound()
+    public void GetShouldThrowExceptionIfNoFileIsFound()
     {
         var path = Path.Combine(@"..", "..", "..", "TestFiles", "sh3.exe");
         Assert.ThrowsAsync<FileNotFoundException>(async () => await client.Get(path, ""));

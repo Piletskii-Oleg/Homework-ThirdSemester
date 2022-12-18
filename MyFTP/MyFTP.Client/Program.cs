@@ -1,5 +1,6 @@
-﻿using MyFTP;
-using System.Net;
+﻿using System.Net;
+using MyFTP;
+using MyFTP.Client;
 
 if (args.Length != 5 && args.Length != 4)
 {
@@ -23,11 +24,23 @@ if (int.TryParse(args[1], out int port))
 
     if (args[2] == "-get")
     {
+        if (!File.Exists(args[3]))
+        {
+            Console.WriteLine("Specified file does not exist.");
+            return;
+        }
+
         await client.Get(args[3], args[4]);
         Console.WriteLine($"Copied file to {Path.GetFullPath(args[4])}");
     }
     else if (args[2] == "-list")
     {
+        if (!Directory.Exists(args[3]))
+        {
+            Console.WriteLine("Specified directory does not exist.");
+            return;
+        }
+
         Console.WriteLine(await client.List(args[3]));
     }
     else

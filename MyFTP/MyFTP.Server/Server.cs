@@ -1,16 +1,25 @@
-﻿namespace MyFTP;
+﻿namespace MyFTP.Server;
 
 using System.Net;
 using System.Net.Sockets;
 
+/// <summary>
+/// Server implementation of the FTP protocol.
+/// </summary>
 public class Server
 {
     private readonly string serverPath;
     private readonly int port;
 
-    private readonly CancellationTokenSource tokenSource = new ();
-    private readonly List<Task> commands = new ();
+    private readonly CancellationTokenSource tokenSource = new();
+    private readonly List<Task> commands = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
+    /// <param name="path">Path to the folder where server will operate.</param>
+    /// <param name="port">Port that should be watched.</param>
+    /// <exception cref="DirectoryNotFoundException">Throws if the specified <paramref name="path"/> does not exist.</exception>
     public Server(string path, int port)
     {
         if (Directory.Exists(path))
@@ -25,22 +34,29 @@ public class Server
         this.port = port;
     }
 
+    /// <summary>
+    /// Starts the server at the specified folder.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Start()
     {
-        var listener = new TcpListener(IPAddress.Any, port);
+        var listener = new TcpListener(IPAddress.Any, this.port);
         listener.Start();
 
-        while (!tokenSource.IsCancellationRequested)
+        while (!this.tokenSource.IsCancellationRequested)
         {
             var socket = await listener.AcceptSocketAsync();
-            commands.Add(Task.Run(async () => await Query(socket)));
+            this.commands.Add(Task.Run(async () => await this.Query(socket)));
         }
 
-        Task.WaitAll(commands.ToArray());
+        Task.WaitAll(this.commands.ToArray());
     }
 
+    /// <summary>
+    /// Stops the server.
+    /// </summary>
     public void Stop()
-        => tokenSource.Cancel();
+        => this.tokenSource.Cancel();
 
     private async Task Query(Socket socket)
     {
@@ -56,11 +72,11 @@ public class Server
         var inputSplit = input.Split();
         if (inputSplit[0] == "1")
         {
-            await List(inputSplit[1], stream);
+            await this.List(inputSplit[1], stream);
         }
         else if (inputSplit[0] == "2")
         {
-            await Get(inputSplit[1], stream);
+            await this.Get(inputSplit[1], stream);
         }
         else
         {
@@ -70,7 +86,7 @@ public class Server
 
     private async Task List(string path, NetworkStream stream)
     {
-        using var writer = new StreamWriter(stream);
+        await using var writer = new StreamWriter(stream);
 
         path = Path.Combine(this.serverPath, path);
 
@@ -108,7 +124,6 @@ public class Server
         }
     }
 
-
     private async Task Get(string path, NetworkStream stream)
     {
         await using var writer = new StreamWriter(stream);
@@ -119,13 +134,13 @@ public class Server
         {
             await stream.WriteAsync(BitConverter.GetBytes(info.Length));
 
-            using var reader = new FileStream(path, FileMode.Open);
+            await using var reader = new FileStream(path, FileMode.Open);
 
             await reader.CopyToAsync(stream);
         }
         catch (FileNotFoundException)
         {
-            await stream.WriteAsync(BitConverter.GetBytes((long)-1));
+            await stream.WriteAsync(BitConverter.GetBytes(-1L));
             await stream.FlushAsync();
         }
         finally
