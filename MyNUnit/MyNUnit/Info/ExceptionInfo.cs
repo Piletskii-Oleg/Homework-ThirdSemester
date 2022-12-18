@@ -2,13 +2,13 @@ namespace MyNUnit.Info;
 
 public class ExceptionInfo
 {
-    public ExceptionInfo(Type? expectedException, Exception? actualException)
+    public ExceptionInfo(Type? expectedExceptionType, Exception? actualException)
     {
-        ExpectedException = expectedException;
+        ExpectedExceptionType = expectedExceptionType;
         ActualException = actualException;
     }
 
-    public Type? ExpectedException { get; }
+    public Type? ExpectedExceptionType { get; }
     
     public Exception? ActualException { get; }
 
@@ -18,11 +18,7 @@ public class ExceptionInfo
         {
             return false;
         }
-        if (ExpectedException == ActualException.GetType())
-        {
-            return true;
-        }
         
-        return false;
+        return ExpectedExceptionType == ActualException.GetType();
     }
 }

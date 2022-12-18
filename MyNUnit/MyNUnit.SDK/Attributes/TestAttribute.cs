@@ -3,7 +3,7 @@ namespace MyNUnit.SDK.Attributes;
 /// <summary>
 ///     bruh
 /// </summary>
-[AttributeUsage(AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class TestAttribute : Attribute
 {
     public Type? Expected { get; }

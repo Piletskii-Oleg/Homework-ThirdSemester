@@ -1,5 +1,6 @@
 namespace MyNUnit.Info;
 
+using System.Diagnostics;
 using System.Reflection;
 using SDK.Attributes;
 
@@ -21,15 +22,14 @@ public class ClassTestInfo
         
         var testMethods = GetMethods(type, typeof(TestAttribute));
         var methodsInfo = new List<MethodTestInfo>();
+        var stopwatch = new Stopwatch();
         foreach (var method in testMethods)
         {
-            var testAttribute = GetTestAttribute(method);
-
             StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
 
             methodsInfo.Add(method.IsStatic
-                ? MethodTestInfo.StartTest(null, method, testAttribute)
-                : MethodTestInfo.StartTest(instance, method, testAttribute));
+                ? MethodTestInfo.StartTest(null, method)
+                : MethodTestInfo.StartTest(instance, method));
 
             StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
         }
@@ -41,14 +41,12 @@ public class ClassTestInfo
     
     public void Print()
     {
-        Console.WriteLine($"Class {Name}");
+        Console.WriteLine($"- Class {Name}");
 
         foreach (var methodInfo in MethodsInfo)
         {
             methodInfo.Print();
         }
-
-        Console.WriteLine();
     }
 
     private static void StartSupplementaryMethods(Type type, object instance, Type attributeType)
@@ -72,15 +70,6 @@ public class ClassTestInfo
         Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));
     }
 
-    private static TestAttribute GetTestAttribute(MethodInfo method)
-    {
-        var testAttributes = method.GetCustomAttributes<TestAttribute>();
-        var attributes = testAttributes as TestAttribute[] ?? testAttributes.ToArray();
-        
-        var testAttribute = attributes[0];
-        return testAttribute;
-    }
-    
     private static IEnumerable<MethodInfo> GetMethods(Type type, Type attributeType)
         => from method in type.GetMethods()
             from attribute in Attribute.GetCustomAttributes(method)
