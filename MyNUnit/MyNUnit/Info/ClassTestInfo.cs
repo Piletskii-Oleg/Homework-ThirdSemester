@@ -4,14 +4,16 @@ using System.Reflection;
 using SDK.Attributes;
 using State;
 
+/// <summary>
+/// Contains information about tests in a class.
+/// </summary>
 public class ClassTestInfo
 {
-    public string Name { get; }
-    
-    public IReadOnlyList<MethodTestInfo>? MethodsInfo { get; }
-
-    public ClassState State { get; }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClassTestInfo"/> class.
+    /// </summary>
+    /// <param name="name">Name of the class.</param>
+    /// <param name="methodsInfo">List of <see cref="MethodTestInfo"/> that contain information about all tests.</param>
     private ClassTestInfo(string name, IReadOnlyList<MethodTestInfo> methodsInfo)
     {
         Name = name;
@@ -24,14 +26,35 @@ public class ClassTestInfo
         Name = name;
         State = state;
     }
-    
+
+    /// <summary>
+    /// Gets name of the class.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Gets list of <see cref="MethodTestInfo"/> that contain information about all tests.
+    /// </summary>
+    public IReadOnlyList<MethodTestInfo>? MethodsInfo { get; }
+
+    /// <summary>
+    /// Gets state of the class.
+    /// </summary>
+    public ClassState State { get; }
+
+    /// <summary>
+    /// Starts all tests in a single class.
+    /// </summary>
+    /// <param name="type">Type that should be tested.</param>
+    /// <param name="instance">Instance on which tests should be done.</param>
+    /// <returns><see cref="ClassTestInfo"/> that contains information about tests.</returns>
     public static ClassTestInfo StartTests(Type type, object instance)
     {
         if (type.IsAbstract)
         {
             return new ClassTestInfo(type.Name, ClassState.ClassIsAbstract);
         }
-        
+
         var state = StartSupplementaryClassMethods(type, typeof(BeforeClassAttribute));
         if (state != ClassState.Passed)
         {
@@ -67,23 +90,33 @@ public class ClassTestInfo
 
         return new ClassTestInfo(type.Name, methodsInfo);
     }
-    
+
+    /// <summary>
+    /// Prints information about tests in a class on the console.
+    /// </summary>
     public void Print()
     {
-        Console.WriteLine($"- Class {Name}");
-        Console.WriteLine($"- State: {State}");
+        Console.WriteLine($"- Class {this.Name}");
+        Console.WriteLine($"- State: {this.State}");
 
-        if (MethodsInfo == null)
+        if (this.MethodsInfo == null)
         {
             return;
         }
-        
-        foreach (var methodInfo in MethodsInfo)
+
+        foreach (var methodInfo in this.MethodsInfo)
         {
             methodInfo.Print();
         }
     }
 
+    /// <summary>
+    /// Used to start methods with either <see cref="BeforeAttribute"/> of <see cref="AfterAttribute"/> attributes.
+    /// </summary>
+    /// <param name="type">Type where methods are contained.</param>
+    /// <param name="instance">Instance on which methods are executed.</param>
+    /// <param name="attributeType">Either <see cref="BeforeAttribute"/> of <see cref="AfterAttribute"/>.</param>
+    /// <returns>State of the class: Passed if everything's fine or other if an exception occurs within.</returns>
     private static ClassState StartSupplementaryMethods(Type type, object instance, Type attributeType)
     {
         var methods = GetMethods(type, attributeType);
@@ -112,6 +145,12 @@ public class ClassTestInfo
         return ClassState.Passed;
     }
 
+    /// <summary>
+    /// Used to start methods with either <see cref="BeforeClassAttribute"/> of <see cref="AfterClassAttribute"/> attributes.
+    /// </summary>
+    /// <param name="type">Type where methods are contained.</param>
+    /// <param name="attributeType">Either <see cref="BeforeClassAttribute"/> of <see cref="AfterClassAttribute"/>.</param>
+    /// <returns>State of the class: Passed if everything's fine or other if an exception occurs within.</returns>
     private static ClassState StartSupplementaryClassMethods(Type type, Type attributeType)
     {
         var classMethods = GetMethods(type, attributeType);

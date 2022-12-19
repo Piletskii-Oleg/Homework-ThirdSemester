@@ -21,7 +21,7 @@ public class ClassTests
     [TestCase(typeof(BeforeClass), ClassState.BeforeClassMethodFailed)]
     [TestCase(typeof(AfterClass), ClassState.AfterClassMethodFailed)]
     [TestCase(typeof(NotStatic), ClassState.ClassMethodWasNotStatic)]
-    public void IncorrectClassShouldNotPassTests(Type type, ClassState classState)
+    public void IncorrectClassesShouldGiveReasonForNotPassingTests(Type type, ClassState classState)
     {
         var instance = Activator.CreateInstance(type);
         var classInfo = ClassTestInfo.StartTests(type, instance);
