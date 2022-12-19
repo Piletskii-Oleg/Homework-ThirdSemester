@@ -3,6 +3,7 @@ namespace MyNUnit.Info;
 using System.Diagnostics;
 using System.Reflection;
 using SDK.Attributes;
+using State;
 
 public class MethodTestInfo
 {
@@ -27,6 +28,10 @@ public class MethodTestInfo
         Ignored = ignored;
         State = TestState.Ignored;
     }
+    
+    private MethodTestInfo(string name, TestState testState)
+        : this (name)
+        => State = testState;
 
     private MethodTestInfo(string name, TestState testState, TimeSpan time)
         : this (name)
@@ -56,12 +61,12 @@ public class MethodTestInfo
 
         if (method.GetParameters().Length != 0)
         {
-            throw new ArgumentException("Method should have no parameters", nameof(method));
+            return new MethodTestInfo(method.Name, TestState.IncorrectNumberOfParameters);
         }
 
         if (method.ReturnType != typeof(void))
         {
-            throw new ArgumentException("Method should be of type void.", nameof(method));
+            return new MethodTestInfo(method.Name, TestState.IncorrectReturnType);
         }
 
         var stopwatch = new Stopwatch();
@@ -107,7 +112,11 @@ public class MethodTestInfo
                 : $"    Exception that was expected: {ExceptionInfo.ExpectedExceptionType}");
         }
 
-        Console.WriteLine($"    Time required: {CompletionTime.Milliseconds} ms.");
+        if (State == TestState.Passed)
+        {
+            Console.WriteLine($"    Time required: {CompletionTime.Milliseconds} ms.");
+        }
+
         Console.WriteLine();
     }
 

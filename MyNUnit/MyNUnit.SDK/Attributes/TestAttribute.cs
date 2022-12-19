@@ -6,17 +6,7 @@ namespace MyNUnit.SDK.Attributes;
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class TestAttribute : Attribute
 {
-    public Type? Expected { get; }
+    public Type? Expected { get; set; }
 
-    public string? Ignored { get; }
-    
-    public TestAttribute()
-    {
-    }
-
-    public TestAttribute(Type expected)
-        => Expected = expected;
-
-    public TestAttribute(string ignored)
-        => Ignored = ignored;
+    public string? Ignored { get; set; }
 }

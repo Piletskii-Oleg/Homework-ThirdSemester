@@ -22,11 +22,6 @@ public class AssemblyTestInfo
         var classesInfo = new ConcurrentBag<ClassTestInfo>();
         Parallel.ForEach(suitableTypes, type =>
         {
-            if (type.IsAbstract)
-            {
-                throw new InvalidOperationException("Type cannot be abstract");
-            }
-            
             if (type.FullName == null)
             {
                 throw new InvalidOperationException("Type name cannot be null");

@@ -1,73 +1,148 @@
 namespace MyNUnit.Info;
 
-using System.Diagnostics;
 using System.Reflection;
 using SDK.Attributes;
+using State;
 
 public class ClassTestInfo
 {
     public string Name { get; }
     
-    public IReadOnlyList<MethodTestInfo> MethodsInfo { get; }
+    public IReadOnlyList<MethodTestInfo>? MethodsInfo { get; }
+
+    public ClassState State { get; }
 
     private ClassTestInfo(string name, IReadOnlyList<MethodTestInfo> methodsInfo)
     {
         Name = name;
         MethodsInfo = methodsInfo;
+        State = ClassState.Passed;
+    }
+
+    private ClassTestInfo(string name, ClassState state)
+    {
+        Name = name;
+        State = state;
     }
     
     public static ClassTestInfo StartTests(Type type, object instance)
     {
-        StartSupplementaryClassMethods(type, typeof(BeforeClassAttribute));
+        if (type.IsAbstract)
+        {
+            return new ClassTestInfo(type.Name, ClassState.ClassIsAbstract);
+        }
         
+        var state = StartSupplementaryClassMethods(type, typeof(BeforeClassAttribute));
+        if (state != ClassState.Passed)
+        {
+            return new ClassTestInfo(type.Name, state);
+        }
+
         var testMethods = GetMethods(type, typeof(TestAttribute));
         var methodsInfo = new List<MethodTestInfo>();
-        var stopwatch = new Stopwatch();
         foreach (var method in testMethods)
         {
-            StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
+            state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
+            if (state != ClassState.Passed)
+            {
+                return new ClassTestInfo(type.Name, state);
+            }
 
             methodsInfo.Add(method.IsStatic
                 ? MethodTestInfo.StartTest(null, method)
                 : MethodTestInfo.StartTest(instance, method));
 
-            StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
+            state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
+            if (state != ClassState.Passed)
+            {
+                return new ClassTestInfo(type.Name, state);
+            }
         }
 
-        StartSupplementaryClassMethods(type, typeof(AfterClassAttribute));
-        
+        state = StartSupplementaryClassMethods(type, typeof(AfterClassAttribute));
+        if (state != ClassState.Passed)
+        {
+            return new ClassTestInfo(type.Name, state);
+        }
+
         return new ClassTestInfo(type.Name, methodsInfo);
     }
     
     public void Print()
     {
         Console.WriteLine($"- Class {Name}");
+        Console.WriteLine($"- State: {State}");
 
+        if (MethodsInfo == null)
+        {
+            return;
+        }
+        
         foreach (var methodInfo in MethodsInfo)
         {
             methodInfo.Print();
         }
     }
 
-    private static void StartSupplementaryMethods(Type type, object instance, Type attributeType)
+    private static ClassState StartSupplementaryMethods(Type type, object instance, Type attributeType)
     {
         var methods = GetMethods(type, attributeType);
         var methodsInfo = methods as MethodInfo[] ?? methods.ToArray();
-        
-        Parallel.ForEach(methodsInfo, method => method.Invoke(instance, null));
+
+        try
+        {
+            Parallel.ForEach(methodsInfo, method => method.Invoke(instance, null));
+        }
+        catch (AggregateException exception)
+        {
+            if (exception.InnerException is TargetInvocationException)
+            {
+                if (attributeType == typeof(BeforeAttribute))
+                {
+                    return ClassState.BeforeMethodFailed;
+                }
+
+                if (attributeType == typeof(AfterAttribute))
+                {
+                    return ClassState.AfterMethodFailed;
+                }
+            }
+        }
+
+        return ClassState.Passed;
     }
 
-    private static void StartSupplementaryClassMethods(Type type, Type attributeType)
+    private static ClassState StartSupplementaryClassMethods(Type type, Type attributeType)
     {
         var classMethods = GetMethods(type, attributeType);
         var classMethodsInfo = classMethods as MethodInfo[] ?? classMethods.ToArray();
 
         if (classMethodsInfo.Any(method => !method.IsStatic))
         {
-            throw new ArgumentException($"Methods with BeforeClassAttribute or AfterClassAttribute must be static", nameof(type));
+            return ClassState.ClassMethodWasNotStatic;
         }
 
-        Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));
+        try
+        {
+            Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));
+        }
+        catch (AggregateException exception)
+        {
+            if (exception.InnerException is TargetInvocationException)
+            {
+                if (attributeType == typeof(BeforeClassAttribute))
+                {
+                    return ClassState.BeforeClassMethodFailed;
+                }
+
+                if (attributeType == typeof(AfterClassAttribute))
+                {
+                    return ClassState.AfterClassMethodFailed;
+                }
+            }
+        }
+
+        return ClassState.Passed;
     }
 
     private static IEnumerable<MethodInfo> GetMethods(Type type, Type attributeType)
