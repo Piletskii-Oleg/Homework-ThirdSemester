@@ -1,23 +1,15 @@
 ﻿namespace PriorityQueue;
 
 /// <summary>
-/// Implementation of a max priority queue.
+/// Thread-safe implementation of a max priority queue.
 /// </summary>
 /// <typeparam name="TValue">Value type.</typeparam>
 public class PriorityQueue<TValue>
 {
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
-    private readonly PriorityQueue<TValue, int> queue;
-    private volatile int size;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PriorityQueue{TValue}"/> class.
-    /// </summary>
-    public PriorityQueue()
-    {
-        this.queue = new(new MaxComparer());
-    }
+    private readonly PriorityQueue<TValue, int> queue = new(new MaxComparer());
+    private int size;
 
     /// <summary>
     /// Adds an element to the priority queue. Thread-safe.
@@ -36,6 +28,8 @@ public class PriorityQueue<TValue>
 
     /// <summary>
     /// Removes an element with the highest priority from the queue and returns it.
+    /// If the queue is empty, waits until an element appears.
+    /// Thread-safe.
     /// </summary>
     /// <returns>Element with the highest priority.</returns>
     public TValue Dequeue()
@@ -58,7 +52,12 @@ public class PriorityQueue<TValue>
     /// </summary>
     /// <returns>Size of the queue at some moment in the past.</returns>
     public int Size()
-        => this.size;
+    {
+        lock (this.lockObject)
+        {
+            return this.size;
+        }
+    }
 
     private class MaxComparer : IComparer<int>
     {
