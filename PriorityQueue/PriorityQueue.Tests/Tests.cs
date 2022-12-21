@@ -83,7 +83,7 @@ public class Tests
         queue.Enqueue(4, 4);
         queue.Enqueue(6, 6);
 
-        Thread.Sleep(100);
+        Thread.Sleep(600);
         Assert.That(queue.Size(), Is.EqualTo(0));
     }
 }
