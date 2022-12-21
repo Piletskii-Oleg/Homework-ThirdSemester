@@ -69,9 +69,7 @@ public class Tests
             () => value2 = queue.Dequeue(),
             () => value3 = queue.Dequeue());
 
-        Assert.That(value1, Is.EqualTo(6));
-        Assert.That(value2, Is.EqualTo(4));
-        Assert.That(value3, Is.EqualTo(2));
+        Assert.That(queue.Size(), Is.EqualTo(0));
     }
 
     [Test]
