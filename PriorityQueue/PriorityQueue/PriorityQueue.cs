@@ -1,77 +1,75 @@
 ﻿namespace PriorityQueue;
 
-public class PriorityQueue<T>
+/// <summary>
+/// Implementation of a max priority queue.
+/// </summary>
+/// <typeparam name="TValue">Value type.</typeparam>
+public class PriorityQueue<TValue>
 {
-    private List<QueueElement> queue;
-    private volatile int size;
-
     private readonly object lockObject = new object();
 
+    private readonly PriorityQueue<TValue, int> queue;
+    private volatile int size;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PriorityQueue{TValue}"/> class.
+    /// </summary>
     public PriorityQueue()
     {
-        queue = new ();
+        this.queue = new(new MaxComparer());
     }
 
-    public void Enqueue(T value, int priority)
+    /// <summary>
+    /// Adds an element to the priority queue. Thread-safe.
+    /// </summary>
+    /// <param name="value">Value of the element.</param>
+    /// <param name="priority">Priority of the element.</param>
+    public void Enqueue(TValue value, int priority)
     {
         lock (this.lockObject)
         {
-            var indexToAdd = 0;
-            for (int i = 0; i < queue.Count; i++)
-            {
-                if (priority > queue[i].Priority)
-                {
-                    indexToAdd = i;
-                }
-            }
-            
-            queue.Insert(indexToAdd, new QueueElement(value, priority));
-            Interlocked.Increment(ref size);
-            Monitor.PulseAll(lockObject);
+            this.queue.Enqueue(value, priority);
+            Interlocked.Increment(ref this.size);
+            Monitor.PulseAll(this.lockObject);
         }
     }
 
-    public T Dequeue()
+    /// <summary>
+    /// Removes an element with the highest priority from the queue and returns it.
+    /// </summary>
+    /// <returns>Element with the highest priority.</returns>
+    public TValue Dequeue()
     {
-        lock (lockObject)
+        lock (this.lockObject)
         {
-            if (queue.Count == 0)
+            if (this.queue.Count == 0)
             {
-                Monitor.Wait(lockObject);
+                Monitor.Wait(this.lockObject);
             }
 
-            int maxPriority = 0;
-            int elementIndex = 0;
-            for (int i = 0; i < queue.Count; i++)
-            {
-                if (queue[i].Priority > maxPriority)
-                {
-                    maxPriority = queue[i].Priority;
-                    elementIndex = i;
-                }
-            }
-
-            var element = queue[elementIndex];
-            queue.RemoveAt(elementIndex);
-            
-            Interlocked.Decrement(ref size);
-            return element.Value;
+            var element = this.queue.Dequeue();
+            Interlocked.Decrement(ref this.size);
+            return element;
         }
     }
 
+    /// <summary>
+    /// Returns size of the queue at some moment in the past.
+    /// </summary>
+    /// <returns>Size of the queue at some moment in the past.</returns>
     public int Size()
-        => size;
-    
-    private class QueueElement
+        => this.size;
+
+    private class MaxComparer : IComparer<int>
     {
-        public T Value { get; }
-
-        public int Priority { get; }
-
-        public QueueElement(T value, int priority)
-        {
-            this.Value = value;
-            this.Priority = priority;
-        }
+        /// <summary>
+        /// Compares two objects. Returns a value less than zero if x is less than y,
+        /// zero if x is equal to y,
+        /// or a value greater than zero if x is greater than y.
+        /// </summary>
+        /// <param name="x">First number.</param>
+        /// <param name="y">Second number.</param>
+        public int Compare(int x, int y)
+            => y - x;
     }
 }
