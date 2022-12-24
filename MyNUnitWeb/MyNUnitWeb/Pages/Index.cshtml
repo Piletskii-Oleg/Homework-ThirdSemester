@@ -7,4 +7,25 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    
+    <h2>Separate page model</h2>
+    <p>@Model.Message</p>
 </div>
+
+<div class="container">
+    <form method="post" enctype="multipart/form-data">
+        <dl>
+            <dd>
+                <input asp-for="Files" type="file" name="files" class="form-control" multiple/>
+            </dd>
+            <input asp-page-handler="Upload" class="btn btn-primary" type="submit" value="Upload!"/>
+        </dl>
+    </form>
+</div>
+
+<div class="align-content-center">
+    <form method="post">
+        <input asp-page-handler="RunTests" class="form-control-sm" type="submit" value="Run tests">
+    </form>
+</div>
+

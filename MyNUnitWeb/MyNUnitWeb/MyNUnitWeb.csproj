@@ -4,6 +4,23 @@
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>0b4d68a3-8759-47ea-a938-97b0e2f2d250</UserSecretsId>
+        <LangVersion>10</LangVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="bootstrap" Version="5.2.3" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MyNUnit\MyNUnit.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Uploads" />
+      <Folder Include="wwwroot\Uploads" />
+    </ItemGroup>
 
 </Project>
