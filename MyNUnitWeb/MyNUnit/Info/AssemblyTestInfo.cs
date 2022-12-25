@@ -3,32 +3,39 @@ namespace MyNUnit.Info;
 using System.Collections.Concurrent;
 using System.Reflection;
 using SDK.Attributes;
+using State;
 
 /// <summary>
 ///     Contains information about tests in an assembly.
 /// </summary>
 public class AssemblyTestInfo
 {
+    public AssemblyTestInfo()
+    {
+    }
+    
     /// <summary>
     ///     Initializes a new instance of the <see cref="AssemblyTestInfo" /> class.
     /// </summary>
     /// <param name="name">Name of the assembly.</param>
     /// <param name="classesInfo">List of <see cref="ClassTestInfo" /> of the assembly.</param>
-    private AssemblyTestInfo(AssemblyName name, IReadOnlyList<ClassTestInfo> classesInfo)
+    private AssemblyTestInfo(AssemblyName name, List<ClassTestInfo> classesInfo)
     {
-        Name = name;
+        Name = name.Name;
         ClassesInfo = classesInfo;
     }
 
+    public int AssemblyTestInfoId { get; set; }
+    
     /// <summary>
     ///     Gets name of the assembly.
     /// </summary>
-    public AssemblyName Name { get; }
+    public string Name { get; set; }
 
     /// <summary>
     ///     Gets list of <see cref="ClassTestInfo" /> of the assembly.
     /// </summary>
-    public IReadOnlyList<ClassTestInfo> ClassesInfo { get; }
+    public List<ClassTestInfo> ClassesInfo { get; set; }
 
     /// <summary>
     ///     Starts tests in the given assembly and returns info about it.
@@ -52,17 +59,18 @@ public class AssemblyTestInfo
         return new AssemblyTestInfo(assembly.GetName(), classesInfo.ToList());
     }
 
-    /// <summary>
-    ///     Prints information about assembly tests on the console.
-    /// </summary>
-    public void Print()
+    public int GetSuccessfulTestsCount()
     {
-        Console.WriteLine($"Assembly name: {Name}");
+        return ClassesInfo
+            .SelectMany(classInfo => classInfo.MethodsInfo)
+            .Sum(methodInfo => methodInfo.State == TestState.Passed ? 1 : 0);
+    }
 
-        foreach (var classInfo in ClassesInfo)
-        {
-            classInfo.Print();
-        }
+    public int GetUnsuccessfulTestsCount()
+    {
+        return ClassesInfo
+                .SelectMany(classInfo => classInfo.MethodsInfo)
+                .Sum(methodInfo => methodInfo.State != TestState.Passed ? 1 : 0);
     }
 
     private static IEnumerable<Type> GetTypes(Assembly assembly)

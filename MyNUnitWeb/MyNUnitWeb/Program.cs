@@ -1,7 +1,13 @@
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.RazorPages;
 
+using Microsoft.EntityFrameworkCore;
+using MyNUnitWeb.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<TestInfoDbContext>(options
+    => options.UseSqlite("Data Source = testInfo.db"));
 
 // Add services to the container.
 builder.Services.AddRazorPages();

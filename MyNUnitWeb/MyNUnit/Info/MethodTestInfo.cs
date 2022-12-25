@@ -10,6 +10,10 @@ using State;
 /// </summary>
 public class MethodTestInfo
 {
+    public MethodTestInfo()
+    {
+    }
+    
     /// <summary>
     ///     Initializes a new instance of the <see cref="MethodTestInfo" /> class.
     /// </summary>
@@ -72,35 +76,37 @@ public class MethodTestInfo
         CompletionTime = time;
     }
 
+    public int MethodTestInfoId { get; set; }
+    
     /// <summary>
     ///     Gets name of the test.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; set; }
 
     /// <summary>
     ///     Gets state of the test.
     /// </summary>
-    public TestState State { get; }
+    public TestState State { get; set; }
 
     /// <summary>
     ///     Gets time which was required to complete the test. 0 if it is ignored.
     /// </summary>
-    public TimeSpan CompletionTime { get; }
+    public TimeSpan CompletionTime { get ; set; }
 
     /// <summary>
     ///     Gets the reason for ignoring a test if it has <see cref="TestAttribute" /> with Ignored property.
     /// </summary>
-    public string? Ignored { get; }
+    public string? Ignored { get; set; }
 
     /// <summary>
     ///     Gets a value indicating whether an exception was caught or not.
     /// </summary>
-    public bool HasCaughtException { get; }
+    public bool HasCaughtException { get; set; }
 
     /// <summary>
     ///     Gets information about an exception if it was caught.
     /// </summary>
-    public ExceptionInfo? ExceptionInfo { get; }
+    public ExceptionInfo? ExceptionInfo { get; set; }
 
     /// <summary>
     ///     Starts the test and returns information about it.
@@ -136,39 +142,6 @@ public class MethodTestInfo
         stopwatch.Stop();
 
         return new MethodTestInfo(method.Name, TestState.Passed, stopwatch.Elapsed);
-    }
-
-    /// <summary>
-    ///     Prints information about the test on the console.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">Throws if an exception has been caught but its info is null.</exception>
-    public void Print()
-    {
-        Console.WriteLine($"--- Method name: {Name}");
-        Console.WriteLine($"    Test State: {State}");
-
-        if (Ignored != null)
-        {
-            Console.WriteLine($"    Ignore reason: {Ignored}");
-            Console.WriteLine();
-
-            return;
-        }
-
-        if (HasCaughtException)
-        {
-            if (ExceptionInfo == null) throw new InvalidOperationException();
-
-            Console.WriteLine($"    Has caught exception {ExceptionInfo.ActualException}");
-
-            Console.WriteLine(ExceptionInfo.ExpectedExceptionType == null
-                ? "    Exception that was expected: none"
-                : $"    Exception that was expected: {ExceptionInfo.ExpectedExceptionType}");
-        }
-
-        if (State == TestState.Passed) Console.WriteLine($"    Time required: {CompletionTime.Milliseconds} ms.");
-
-        Console.WriteLine();
     }
 
     private static TestAttribute GetTestAttribute(MemberInfo method)

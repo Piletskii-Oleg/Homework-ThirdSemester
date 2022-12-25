@@ -5,6 +5,10 @@ namespace MyNUnit.Info;
 /// </summary>
 public class ExceptionInfo
 {
+    public ExceptionInfo()
+    {
+    }
+    
     /// <summary>
     ///     Initializes a new instance of the <see cref="ExceptionInfo" /> class.
     /// </summary>
@@ -12,19 +16,21 @@ public class ExceptionInfo
     /// <param name="actualException">Exception that is thrown in the test.</param>
     public ExceptionInfo(Type? expectedExceptionType, Exception? actualException)
     {
-        ExpectedExceptionType = expectedExceptionType;
-        ActualException = actualException;
+        ExpectedExceptionType = expectedExceptionType?.ToString();
+        ActualExceptionType = actualException?.GetType().ToString();
     }
 
+    public int ExceptionInfoId { get; set; }
+    
     /// <summary>
     ///     Gets type of the expected exception.
     /// </summary>
-    public Type? ExpectedExceptionType { get; }
+    public string? ExpectedExceptionType { get; set; }
 
     /// <summary>
     ///     Gets exception that is thrown in the test.
     /// </summary>
-    public Exception? ActualException { get; }
+    public string? ActualExceptionType { get; set; }
 
     /// <summary>
     ///     Checks if <see cref="ExpectedExceptionType" /> and type of <see cref="ActualException" /> are same.
@@ -35,8 +41,8 @@ public class ExceptionInfo
     /// </returns>
     public bool AreExceptionsSame()
     {
-        if (ActualException == null) return false;
+        if (ActualExceptionType == null) return false;
 
-        return ExpectedExceptionType == ActualException.GetType();
+        return ExpectedExceptionType == ActualExceptionType;
     }
 }

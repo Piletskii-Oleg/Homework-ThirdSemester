@@ -9,12 +9,16 @@ using State;
 /// </summary>
 public class ClassTestInfo
 {
+    public ClassTestInfo()
+    {
+    }
+    
     /// <summary>
     ///     Initializes a new instance of the <see cref="ClassTestInfo" /> class.
     /// </summary>
     /// <param name="name">Name of the class.</param>
     /// <param name="methodsInfo">List of <see cref="MethodTestInfo" /> that contain information about all tests.</param>
-    private ClassTestInfo(string name, IReadOnlyList<MethodTestInfo> methodsInfo)
+    private ClassTestInfo(string name, List<MethodTestInfo> methodsInfo)
     {
         Name = name;
         MethodsInfo = methodsInfo;
@@ -27,20 +31,22 @@ public class ClassTestInfo
         State = state;
     }
 
+    public int ClassTestInfoId { get; set; }
+    
     /// <summary>
     ///     Gets name of the class.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; set; }
 
     /// <summary>
     ///     Gets list of <see cref="MethodTestInfo" /> that contain information about all tests.
     /// </summary>
-    public IReadOnlyList<MethodTestInfo>? MethodsInfo { get; }
+    public List<MethodTestInfo>? MethodsInfo { get; set; }
 
     /// <summary>
     ///     Gets state of the class.
     /// </summary>
-    public ClassState State { get; }
+    public ClassState State { get; set; }
 
     /// <summary>
     ///     Starts all tests in a single class.
@@ -57,7 +63,7 @@ public class ClassTestInfo
 
         var testMethods = GetMethods(type, typeof(TestAttribute));
         var methodsInfo = new List<MethodTestInfo>();
-
+        
         foreach (var method in testMethods)
         {
             state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
@@ -75,22 +81,6 @@ public class ClassTestInfo
         if (state != ClassState.Passed) return new ClassTestInfo(type.Name, state);
 
         return new ClassTestInfo(type.Name, methodsInfo);
-    }
-
-    /// <summary>
-    ///     Prints information about tests in a class on the console.
-    /// </summary>
-    public void Print()
-    {
-        Console.WriteLine($"- Class {Name}");
-        Console.WriteLine($"- State: {State}");
-
-        if (MethodsInfo == null) return;
-
-        foreach (var methodInfo in MethodsInfo)
-        {
-            methodInfo.Print();
-        }
     }
 
     /// <summary>
@@ -135,7 +125,7 @@ public class ClassTestInfo
         var classMethodsInfo = classMethods as MethodInfo[] ?? classMethods.ToArray();
 
         if (classMethodsInfo.Any(method => !method.IsStatic)) return ClassState.ClassMethodWasNotStatic;
-
+        
         try
         {
             Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));

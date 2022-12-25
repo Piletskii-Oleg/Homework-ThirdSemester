@@ -1,34 +1,61 @@
 ﻿namespace MyNUnitWeb.Pages;
 
+using Data;
+using Microsoft.EntityFrameworkCore;
+
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> logger;
 
+    private readonly TestInfoDbContext infoContext;
+
     private IWebHostEnvironment environment;
     
-    public IndexModel(ILogger<IndexModel> logger, IWebHostEnvironment environment)
+    public IndexModel(ILogger<IndexModel> logger, IWebHostEnvironment environment, TestInfoDbContext infoContext)
     {
         this.logger = logger;
         this.environment = environment;
+        this.infoContext = infoContext;
     }
 
-    public string Message { get; private set; } = "PageModel in C#\n";
-    
-    public List<IFormFile> Files { get; set; }
+    public IList<TestInfo> TestInfos { get; private set; } = new List<TestInfo>();
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
-        Message += $"Server time is {DateTime.Now}";
+        TestInfos = await infoContext.TestsInfo
+            .Include(testsInfo => testsInfo.AssembliesTestInfo)
+            .ThenInclude(assemblyInfo => assemblyInfo.ClassesInfo)
+            .ThenInclude(classInfo => classInfo.MethodsInfo)
+            .OrderBy(info => info.TestInfoId).ToListAsync();
+    }
+    
+    public async Task<IActionResult> OnPostUploadAsync(List<IFormFile> files)
+    {
+        string wwwPath = environment.WebRootPath;
+
+        await CreateFiles(files, wwwPath);
+
+        return RedirectToPage("./Index");
     }
 
-    public async Task<IActionResult> OnPostUploadAsync(List<IFormFile> files)
+    public async Task<IActionResult> OnPostRunTests()
     {
         string wwwPath = environment.WebRootPath;
         string contentPath = environment.ContentRootPath;
         
-        await CreateFiles(files, wwwPath);
+        var filesPath = Path.Combine(wwwPath, "Uploads");
+        var list = MyNUnit.MyNUnit.StartAllTests(filesPath);
 
-        return Page();
+        if (list.Count != 0)
+        {
+            var info = new TestInfo { AssembliesTestInfo = list };
+            infoContext.TestsInfo.Add(info);
+            await infoContext.SaveChangesAsync();
+        }
+
+        DeleteFiles(filesPath);
+
+        return RedirectToPage("./Index");
     }
 
     private static async Task CreateFiles(List<IFormFile> files, string path)
@@ -49,20 +76,7 @@ public class IndexModel : PageModel
             }
         }
     }
-
-    public IActionResult OnPostRunTests()
-    {
-        string wwwPath = environment.WebRootPath;
-        string contentPath = environment.ContentRootPath;
-        
-        var filesPath = Path.Combine(wwwPath, "Uploads");
-        var list = MyNUnit.MyNUnit.StartAllTests(filesPath);
-        
-        DeleteFiles(filesPath);
-        
-        return Page();
-    }
-
+    
     private void DeleteFiles(string path)
     {
         var files = Directory.GetFiles(path);
