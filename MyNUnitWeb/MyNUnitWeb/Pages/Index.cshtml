@@ -7,7 +7,7 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h5>Upload MyNUnit test projects and get test results.</h5>
 </div>
 
 <div class="container">
@@ -16,14 +16,14 @@
             <dd>
                 <input type="file" name="files" class="form-control" multiple/>
             </dd>
-            <input asp-page-handler="Upload" class="btn btn-primary" type="submit" value="Upload!"/>
+            <input asp-page-handler="Upload" class="btn btn-success" type="submit" value="Upload!"/>
         </dl>
     </form>
 </div>
 
 <div class="align-content-center">
     <form method="post">
-        <input asp-page-handler="RunTests" class="form-control-sm" type="submit" value="Run tests">
+        <input asp-page-handler="RunTests" class="btn btn-primary btn-lg" type="submit" value="Run tests">
     </form>
 </div>
 
@@ -33,6 +33,7 @@
         <th scope="col">Assembly name</th>
         <th scope="col">Amount of successful tests</th>
         <th scope="col">Amount of unsuccessful tests</th>
+        <th scope="col">Date</th>
     </tr>
     </thead>
     
@@ -49,6 +50,7 @@
                 </td>
                 <td>@assemblyInfo.GetSuccessfulTestsCount()</td>
                 <td>@assemblyInfo.GetUnsuccessfulTestsCount()</td>
+                <td>@info.TestDate</td>
             </tr>
             
             <tr class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">

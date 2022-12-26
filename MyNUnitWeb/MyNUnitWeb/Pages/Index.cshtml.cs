@@ -4,16 +4,13 @@ using Data;
 using Microsoft.EntityFrameworkCore;
 
 public class IndexModel : PageModel
-{
-    private readonly ILogger<IndexModel> logger;
-
+{ 
     private readonly TestInfoDbContext infoContext;
 
     private IWebHostEnvironment environment;
     
-    public IndexModel(ILogger<IndexModel> logger, IWebHostEnvironment environment, TestInfoDbContext infoContext)
+    public IndexModel(IWebHostEnvironment environment, TestInfoDbContext infoContext)
     {
-        this.logger = logger;
         this.environment = environment;
         this.infoContext = infoContext;
     }
@@ -49,7 +46,11 @@ public class IndexModel : PageModel
 
         if (list.Count != 0)
         {
-            var info = new TestInfo { AssembliesTestInfo = list };
+            var info = new TestInfo
+            {
+                AssembliesTestInfo = list,
+                TestDate = DateTime.Now,
+            };
             infoContext.TestsInfo.Add(info);
             await infoContext.SaveChangesAsync();
         }
