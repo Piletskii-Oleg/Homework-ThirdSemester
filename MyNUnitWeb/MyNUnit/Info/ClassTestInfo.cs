@@ -41,7 +41,7 @@ public class ClassTestInfo
     /// <summary>
     ///     Gets list of <see cref="MethodTestInfo" /> that contain information about all tests.
     /// </summary>
-    public List<MethodTestInfo>? MethodsInfo { get; set; }
+    public List<MethodTestInfo> MethodsInfo { get; set; }
 
     /// <summary>
     ///     Gets state of the class.

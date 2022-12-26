@@ -1,4 +1,5 @@
 ﻿@page
+@using MyNUnit.State
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -34,19 +35,74 @@
         <th scope="col">Amount of unsuccessful tests</th>
     </tr>
     </thead>
+    
     <tbody>
     @foreach (var info in Model.TestInfos)
     {
-        if (info.AssembliesTestInfo == null)
-        {
-            continue;
-        }
         @foreach (var assemblyInfo in info.AssembliesTestInfo)
         {
-            <tr>
-                <td>@assemblyInfo.Name</td>
+            <tr data-bs-toggle="collapse" data-bs-target="#methods_@assemblyInfo.AssemblyTestInfoId">
+                <td>
+                    <button class="btn btn-outline-dark" type="button">
+                        @assemblyInfo.Name
+                    </button>
+                </td>
                 <td>@assemblyInfo.GetSuccessfulTestsCount()</td>
                 <td>@assemblyInfo.GetUnsuccessfulTestsCount()</td>
+            </tr>
+            
+            <tr class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+                <td colspan="6">
+                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+                        <table class="table">
+                        <tr>
+                                <th>Method name</th>
+                                <th>Status</th>
+                                <th>Ignore message</th>
+                                <th>Completion time</th>
+                                <th>Thrown exception</th>
+                                <th>Expected exception</th>
+                            </tr>
+
+                            @foreach (var methodInfo in assemblyInfo.ClassesInfo.SelectMany(classInfo => classInfo.MethodsInfo))
+                            {
+                                if (methodInfo.State == TestState.Passed)
+                                {
+                                    <tr class="table-success">
+                                        <td>@methodInfo.Name</td>
+                                        <td>@methodInfo.State</td>
+                                        <td>@methodInfo.Ignored</td>
+                                        <td>@methodInfo.CompletionTime</td>
+                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
+                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
+                                    </tr>
+                                }
+                                else if (methodInfo.State == TestState.Ignored)
+                                {
+                                    <tr class="table-warning">
+                                        <td>@methodInfo.Name</td>
+                                        <td>@methodInfo.State</td>
+                                        <td>@methodInfo.Ignored</td>
+                                        <td>@methodInfo.CompletionTime</td>
+                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
+                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr class="table-danger">
+                                        <td>@methodInfo.Name</td>
+                                        <td>@methodInfo.State</td>
+                                        <td>@methodInfo.Ignored</td>
+                                        <td>@methodInfo.CompletionTime</td>
+                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
+                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
+                                    </tr>
+                                }
+                            }
+                        </table>
+                    </div>
+                </td> 
             </tr>
         }
     }

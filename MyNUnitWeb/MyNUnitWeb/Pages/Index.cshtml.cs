@@ -26,6 +26,7 @@ public class IndexModel : PageModel
             .Include(testsInfo => testsInfo.AssembliesTestInfo)
             .ThenInclude(assemblyInfo => assemblyInfo.ClassesInfo)
             .ThenInclude(classInfo => classInfo.MethodsInfo)
+            .ThenInclude(methodInfo => methodInfo.ExceptionInfo)
             .OrderBy(info => info.TestInfoId).ToListAsync();
     }
     
