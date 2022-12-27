@@ -10,16 +10,6 @@ using SDK.Attributes;
 public class AssemblyTestInfo
 {
     /// <summary>
-    /// Gets name of the assembly.
-    /// </summary>
-    public AssemblyName Name { get; }
-
-    /// <summary>
-    /// Gets list of <see cref="ClassTestInfo"/> of the assembly.
-    /// </summary>
-    public IReadOnlyList<ClassTestInfo> ClassesInfo { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="AssemblyTestInfo"/> class.
     /// </summary>
     /// <param name="name">Name of the assembly.</param>
@@ -29,6 +19,16 @@ public class AssemblyTestInfo
         this.Name = name;
         this.ClassesInfo = classesInfo;
     }
+
+    /// <summary>
+    /// Gets name of the assembly.
+    /// </summary>
+    public AssemblyName Name { get; }
+
+    /// <summary>
+    /// Gets list of <see cref="ClassTestInfo"/> of the assembly.
+    /// </summary>
+    public IReadOnlyList<ClassTestInfo> ClassesInfo { get; }
 
     /// <summary>
     /// Starts tests in the given assembly and returns info about it.
@@ -47,8 +47,7 @@ public class AssemblyTestInfo
                 throw new InvalidOperationException("Type name cannot be null");
             }
 
-            var instance = assembly.CreateInstance(type.FullName);
-            classesInfo.Add(ClassTestInfo.StartTests(type, instance));
+            classesInfo.Add(ClassTestInfo.StartTests(type));
         });
 
         return new AssemblyTestInfo(assembly.GetName(), classesInfo.ToList());

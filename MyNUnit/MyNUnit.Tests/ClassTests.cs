@@ -10,8 +10,7 @@ public class ClassTests
     public void CorrectClassShouldPassTests()
     {
         var type = typeof(ClassTestsClass);
-        var instance = Activator.CreateInstance(type);
-        var classInfo = ClassTestInfo.StartTests(type, instance);
+        var classInfo = ClassTestInfo.StartTests(type);
 
         Assert.That(classInfo.State, Is.EqualTo(ClassState.Passed));
     }
@@ -23,8 +22,7 @@ public class ClassTests
     [TestCase(typeof(NotStatic), ClassState.ClassMethodWasNotStatic)]
     public void IncorrectClassesShouldGiveReasonForNotPassingTests(Type type, ClassState classState)
     {
-        var instance = Activator.CreateInstance(type);
-        var classInfo = ClassTestInfo.StartTests(type, instance);
+        var classInfo = ClassTestInfo.StartTests(type);
 
         Assert.That(classInfo.State, Is.EqualTo(classState));
     }

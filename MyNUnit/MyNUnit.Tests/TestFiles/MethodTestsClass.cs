@@ -44,4 +44,11 @@ public class MethodTestsClass
     {
         throw new ArgumentException();
     }
+
+    [Test(Expected = typeof(ArgumentException))]
+    public void ShouldFailBecauseNoException()
+    {
+        var a = 10;
+        a++;
+    }
 }

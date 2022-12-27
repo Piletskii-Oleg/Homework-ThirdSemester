@@ -1,6 +1,8 @@
 namespace MyNUnit.Info;
 
+using System.Collections.Concurrent;
 using System.Reflection;
+using Exceptions;
 using SDK.Attributes;
 using State;
 
@@ -48,7 +50,7 @@ public class ClassTestInfo
     /// <param name="type">Type that should be tested.</param>
     /// <param name="instance">Instance on which tests should be done.</param>
     /// <returns><see cref="ClassTestInfo"/> that contains information about tests.</returns>
-    public static ClassTestInfo StartTests(Type type, object instance)
+    public static ClassTestInfo StartTests(Type type)
     {
         if (type.IsAbstract)
         {
@@ -62,23 +64,19 @@ public class ClassTestInfo
         }
 
         var testMethods = GetMethods(type, typeof(TestAttribute));
-        var methodsInfo = new List<MethodTestInfo>();
-        foreach (var method in testMethods)
+        var methodsInfo = new ConcurrentBag<MethodTestInfo>();
+
+        try
         {
-            state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
-            if (state != ClassState.Passed)
+            Parallel.ForEach(testMethods, method => methodsInfo.Add(RunTestAndSupplementary(type, method)));
+        }
+        catch (AggregateException exception)
+        {
+            if (exception.InnerException.GetType() == typeof(SupplementaryMethodException))
             {
-                return new ClassTestInfo(type.Name, state);
-            }
+                var innerException = exception.InnerException as SupplementaryMethodException;
 
-            methodsInfo.Add(method.IsStatic
-                ? MethodTestInfo.StartTest(null, method)
-                : MethodTestInfo.StartTest(instance, method));
-
-            state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
-            if (state != ClassState.Passed)
-            {
-                return new ClassTestInfo(type.Name, state);
+                return new ClassTestInfo(type.Name, innerException.ClassState);
             }
         }
 
@@ -88,7 +86,7 @@ public class ClassTestInfo
             return new ClassTestInfo(type.Name, state);
         }
 
-        return new ClassTestInfo(type.Name, methodsInfo);
+        return new ClassTestInfo(type.Name, methodsInfo.ToList());
     }
 
     /// <summary>
@@ -110,6 +108,28 @@ public class ClassTestInfo
         }
     }
 
+    private static MethodTestInfo RunTestAndSupplementary(Type type, MethodInfo method)
+    {
+        var instance = Activator.CreateInstance(type);
+        var state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
+        if (state != ClassState.Passed)
+        {
+            throw new SupplementaryMethodException(ClassState.BeforeMethodFailed);
+        }
+
+        var methodTestInfo = method.IsStatic
+            ? MethodTestInfo.StartTest(null, method)
+            : MethodTestInfo.StartTest(instance, method);
+
+        state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
+        if (state != ClassState.Passed)
+        {
+            throw new SupplementaryMethodException(ClassState.AfterMethodFailed);
+        }
+
+        return methodTestInfo;
+    }
+
     /// <summary>
     /// Used to start methods with either <see cref="BeforeAttribute"/> of <see cref="AfterAttribute"/> attributes.
     /// </summary>
@@ -124,21 +144,21 @@ public class ClassTestInfo
 
         try
         {
-            Parallel.ForEach(methodsInfo, method => method.Invoke(instance, null));
-        }
-        catch (AggregateException exception)
-        {
-            if (exception.InnerException is TargetInvocationException)
+            foreach (var method in methodsInfo)
             {
-                if (attributeType == typeof(BeforeAttribute))
-                {
-                    return ClassState.BeforeMethodFailed;
-                }
+                method.Invoke(instance, null);
+            }
+        }
+        catch (TargetInvocationException)
+        {
+            if (attributeType == typeof(BeforeAttribute))
+            {
+                return ClassState.BeforeMethodFailed;
+            }
 
-                if (attributeType == typeof(AfterAttribute))
-                {
-                    return ClassState.AfterMethodFailed;
-                }
+            if (attributeType == typeof(AfterAttribute))
+            {
+                return ClassState.AfterMethodFailed;
             }
         }
 
@@ -163,21 +183,21 @@ public class ClassTestInfo
 
         try
         {
-            Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));
-        }
-        catch (AggregateException exception)
-        {
-            if (exception.InnerException is TargetInvocationException)
+            foreach (var method in classMethodsInfo)
             {
-                if (attributeType == typeof(BeforeClassAttribute))
-                {
-                    return ClassState.BeforeClassMethodFailed;
-                }
+                method.Invoke(null, null);
+            }
+        }
+        catch (TargetInvocationException exception)
+        {
+            if (attributeType == typeof(BeforeClassAttribute))
+            {
+                return ClassState.BeforeClassMethodFailed;
+            }
 
-                if (attributeType == typeof(AfterClassAttribute))
-                {
-                    return ClassState.AfterClassMethodFailed;
-                }
+            if (attributeType == typeof(AfterClassAttribute))
+            {
+                return ClassState.AfterClassMethodFailed;
             }
         }
 

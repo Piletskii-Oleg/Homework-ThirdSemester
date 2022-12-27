@@ -106,7 +106,7 @@ public class MethodTestInfo
     /// <returns>Information about the test.</returns>
     public static MethodTestInfo StartTest(object? instance, MethodInfo method)
     {
-        var testAttribute = GetTestAttribute(method);
+        var testAttribute = method.GetCustomAttribute<TestAttribute>();
 
         if (testAttribute.Ignored != null)
         {
@@ -137,7 +137,10 @@ public class MethodTestInfo
         }
 
         stopwatch.Stop();
-        return new MethodTestInfo(method.Name, TestState.Passed, stopwatch.Elapsed);
+
+        return testAttribute.Expected != null
+            ? new MethodTestInfo(method.Name, testAttribute.Expected, null, stopwatch.Elapsed)
+            : new MethodTestInfo(method.Name, TestState.Passed, stopwatch.Elapsed);
     }
 
     /// <summary>
@@ -176,14 +179,5 @@ public class MethodTestInfo
         }
 
         Console.WriteLine();
-    }
-
-    private static TestAttribute GetTestAttribute(MemberInfo method)
-    {
-        var testAttributes = method.GetCustomAttributes<TestAttribute>();
-        var attributes = testAttributes as TestAttribute[] ?? testAttributes.ToArray();
-
-        var testAttribute = attributes[0];
-        return testAttribute;
     }
 }
