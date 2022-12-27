@@ -7,7 +7,7 @@ public class IndexModel : PageModel
 { 
     private readonly TestInfoDbContext infoContext;
 
-    private IWebHostEnvironment environment;
+    private readonly IWebHostEnvironment environment;
     
     public IndexModel(IWebHostEnvironment environment, TestInfoDbContext infoContext)
     {
@@ -39,8 +39,7 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostRunTests()
     {
         string wwwPath = environment.WebRootPath;
-        string contentPath = environment.ContentRootPath;
-        
+
         var filesPath = Path.Combine(wwwPath, "Uploads");
         var list = MyNUnit.MyNUnit.StartAllTests(filesPath);
 

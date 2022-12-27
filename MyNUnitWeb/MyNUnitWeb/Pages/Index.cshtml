@@ -54,10 +54,37 @@
             </tr>
             
             <tr class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
-                <td colspan="6">
+                <td colspan="2">
                     <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
                         <table class="table">
-                        <tr>
+                            <tr>
+                                <th>Class name</th>
+                                <th>Status</th>
+                            </tr>
+                            
+                            @foreach (var classInfo in assemblyInfo.ClassesInfo)
+                            {
+                                string color;
+                                if (classInfo.State == ClassState.Passed)
+                                {
+                                    color = "table-success";
+                                }
+                                else
+                                {
+                                    color = "table-warning";
+                                }
+                                
+                                <tr class="@color">
+                                    <td>@classInfo.Name</td>
+                                    <td>@classInfo.State</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                    
+                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+                        <table class="table">
+                            <tr>
                                 <th>Method name</th>
                                 <th>Status</th>
                                 <th>Ignore message</th>
@@ -68,39 +95,28 @@
 
                             @foreach (var methodInfo in assemblyInfo.ClassesInfo.SelectMany(classInfo => classInfo.MethodsInfo))
                             {
+                                string color;
                                 if (methodInfo.State == TestState.Passed)
                                 {
-                                    <tr class="table-success">
-                                        <td>@methodInfo.Name</td>
-                                        <td>@methodInfo.State</td>
-                                        <td>@methodInfo.Ignored</td>
-                                        <td>@methodInfo.CompletionTime</td>
-                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
-                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
-                                    </tr>
+                                    color = "table-success";
                                 }
                                 else if (methodInfo.State == TestState.Ignored)
                                 {
-                                    <tr class="table-warning">
-                                        <td>@methodInfo.Name</td>
-                                        <td>@methodInfo.State</td>
-                                        <td>@methodInfo.Ignored</td>
-                                        <td>@methodInfo.CompletionTime</td>
-                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
-                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
-                                    </tr>
+                                    color = "table-warning";
                                 }
                                 else
                                 {
-                                    <tr class="table-danger">
-                                        <td>@methodInfo.Name</td>
-                                        <td>@methodInfo.State</td>
-                                        <td>@methodInfo.Ignored</td>
-                                        <td>@methodInfo.CompletionTime</td>
-                                        <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
-                                        <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
-                                    </tr>
+                                    color = "table-danger";
                                 }
+                                
+                                <tr class="@color">
+                                    <td>@methodInfo.Name</td>
+                                    <td>@methodInfo.State</td>
+                                    <td>@methodInfo.Ignored</td>
+                                    <td>@methodInfo.CompletionTime</td>
+                                    <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
+                                    <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
+                                </tr>
                             }
                         </table>
                     </div>
