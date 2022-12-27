@@ -5,12 +5,12 @@ using System.Reflection;
 using Info;
 
 /// <summary>
-///     Class that is used to start tests.
+/// Class that is used to start tests.
 /// </summary>
 public static class MyNUnit
 {
     /// <summary>
-    ///     Starts all tests by the given path.
+    /// Starts all tests by the given path.
     /// </summary>
     /// <param name="path">Path to the assemblies.</param>
     /// <returns>List with information about tests in each assembly.</returns>
@@ -27,13 +27,13 @@ public static class MyNUnit
                 assemblies.Add(file);
             }
         }
-        
+
         var assembliesInfo = new ConcurrentBag<AssemblyTestInfo>();
         Parallel.ForEach(assemblies, file =>
         {
             byte[] rawAssembly = File.ReadAllBytes(file.FullName);
             var assembly = Assembly.Load(rawAssembly);
-            
+
             assembliesInfo.Add(AssemblyTestInfo.StartAssemblyTests(assembly));
         });
 
@@ -43,7 +43,7 @@ public static class MyNUnit
     private static bool CheckIsAssembly(FileInfo file)
     {
         bool isAssembly = true;
-        
+
         try
         {
             AssemblyName.GetAssemblyName(file.FullName);

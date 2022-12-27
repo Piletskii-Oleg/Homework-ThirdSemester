@@ -41,20 +41,20 @@ public class IndexModel : PageModel
         string wwwPath = environment.WebRootPath;
 
         var filesPath = Path.Combine(wwwPath, "Uploads");
-        var list = MyNUnit.MyNUnit.StartAllTests(filesPath);
+        var assembliesList = MyNUnit.MyNUnit.StartAllTests(filesPath);
 
         var dbList = new List<AssemblyTestInfoDb>();
 
-        foreach (var info in list)
+        foreach (var assemblyTestInfo in assembliesList)
         {
             dbList.Add(new AssemblyTestInfoDb
             {
-                Name = info.Name,
-                ClassesInfo = GetClassesInfo(info)
+                Name = assemblyTestInfo.Name.Name,
+                ClassesInfo = GetClassesInfo(assemblyTestInfo)
             });
         }
 
-        if (list.Count != 0)
+        if (dbList.Count != 0)
         {
             var info = new TestInfo
             {
@@ -132,8 +132,8 @@ public class IndexModel : PageModel
                 CompletionTime = methodInfo.CompletionTime,
                 Ignored = methodInfo.Ignored,
                 HasCaughtException = methodInfo.HasCaughtException,
-                ExpectedExceptionType = methodInfo.ExceptionInfo?.ExpectedExceptionType,
-                ActualExceptionType = methodInfo.ExceptionInfo?.ActualExceptionType,
+                ExpectedExceptionType = methodInfo.ExceptionInfo?.ExpectedExceptionType?.ToString(),
+                ActualExceptionType = methodInfo.ExceptionInfo?.ActualException?.GetType().ToString(),
             });
         }
 

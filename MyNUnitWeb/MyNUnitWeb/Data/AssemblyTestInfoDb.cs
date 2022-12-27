@@ -7,14 +7,8 @@ public class AssemblyTestInfoDb
 {
     public int AssemblyTestInfoDbId { get; set; }
     
-    /// <summary>
-    ///     Gets name of the assembly.
-    /// </summary>
     public string Name { get; set; }
-
-    /// <summary>
-    ///     Gets list of <see cref="ClassTestInfo" /> of the assembly.
-    /// </summary>
+    
     public List<ClassTestInfoDb> ClassesInfo { get; set; }
     
     public int GetSuccessfulTestsCount()

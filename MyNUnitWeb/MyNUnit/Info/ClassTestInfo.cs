@@ -1,24 +1,22 @@
 namespace MyNUnit.Info;
 
+using System.Collections.Concurrent;
 using System.Reflection;
+using Exceptions;
 using SDK.Attributes;
 using State;
 
 /// <summary>
-///     Contains information about tests in a class.
+/// Contains information about tests in a class.
 /// </summary>
 public class ClassTestInfo
 {
-    public ClassTestInfo()
-    {
-    }
-    
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ClassTestInfo" /> class.
+    /// Initializes a new instance of the <see cref="ClassTestInfo"/> class.
     /// </summary>
     /// <param name="name">Name of the class.</param>
-    /// <param name="methodsInfo">List of <see cref="MethodTestInfo" /> that contain information about all tests.</param>
-    private ClassTestInfo(string name, List<MethodTestInfo> methodsInfo)
+    /// <param name="methodsInfo">List of <see cref="MethodTestInfo"/> that contain information about all tests.</param>
+    private ClassTestInfo(string name, IReadOnlyList<MethodTestInfo> methodsInfo)
     {
         Name = name;
         MethodsInfo = methodsInfo;
@@ -31,64 +29,113 @@ public class ClassTestInfo
         State = state;
     }
 
-    public int ClassTestInfoId { get; set; }
-    
     /// <summary>
-    ///     Gets name of the class.
+    /// Gets name of the class.
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; }
 
     /// <summary>
-    ///     Gets list of <see cref="MethodTestInfo" /> that contain information about all tests.
+    /// Gets list of <see cref="MethodTestInfo"/> that contain information about all tests.
     /// </summary>
-    public List<MethodTestInfo> MethodsInfo { get; set; }
+    public IReadOnlyList<MethodTestInfo>? MethodsInfo { get; }
 
     /// <summary>
-    ///     Gets state of the class.
+    /// Gets state of the class.
     /// </summary>
-    public ClassState State { get; set; }
+    public ClassState State { get; }
 
     /// <summary>
-    ///     Starts all tests in a single class.
+    /// Starts all tests in a single class.
     /// </summary>
     /// <param name="type">Type that should be tested.</param>
     /// <param name="instance">Instance on which tests should be done.</param>
-    /// <returns><see cref="ClassTestInfo" /> that contains information about tests.</returns>
-    public static ClassTestInfo StartTests(Type type, object instance)
+    /// <returns><see cref="ClassTestInfo"/> that contains information about tests.</returns>
+    public static ClassTestInfo StartTests(Type type)
     {
-        if (type.IsAbstract) return new ClassTestInfo(type.Name, ClassState.ClassIsAbstract);
+        if (type.IsAbstract)
+        {
+            return new ClassTestInfo(type.Name, ClassState.ClassIsAbstract);
+        }
 
         var state = StartSupplementaryClassMethods(type, typeof(BeforeClassAttribute));
-        if (state != ClassState.Passed) return new ClassTestInfo(type.Name, state);
+        if (state != ClassState.Passed)
+        {
+            return new ClassTestInfo(type.Name, state);
+        }
 
         var testMethods = GetMethods(type, typeof(TestAttribute));
-        var methodsInfo = new List<MethodTestInfo>();
-        
-        foreach (var method in testMethods)
+        var methodsInfo = new ConcurrentBag<MethodTestInfo>();
+
+        try
         {
-            state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
-            if (state != ClassState.Passed) return new ClassTestInfo(type.Name, state);
+            Parallel.ForEach(testMethods, method => methodsInfo.Add(RunTestAndSupplementary(type, method)));
+        }
+        catch (AggregateException exception)
+        {
+            if (exception.InnerException.GetType() == typeof(SupplementaryMethodException))
+            {
+                var innerException = exception.InnerException as SupplementaryMethodException;
 
-            methodsInfo.Add(method.IsStatic
-                ? MethodTestInfo.StartTest(null, method)
-                : MethodTestInfo.StartTest(instance, method));
-
-            state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
-            if (state != ClassState.Passed) return new ClassTestInfo(type.Name, state);
+                return new ClassTestInfo(type.Name, innerException.ClassState);
+            }
         }
 
         state = StartSupplementaryClassMethods(type, typeof(AfterClassAttribute));
-        if (state != ClassState.Passed) return new ClassTestInfo(type.Name, state);
+        if (state != ClassState.Passed)
+        {
+            return new ClassTestInfo(type.Name, state);
+        }
 
-        return new ClassTestInfo(type.Name, methodsInfo);
+        return new ClassTestInfo(type.Name, methodsInfo.ToList());
     }
 
     /// <summary>
-    ///     Used to start methods with either <see cref="BeforeAttribute" /> of <see cref="AfterAttribute" /> attributes.
+    /// Prints information about tests in a class on the console.
+    /// </summary>
+    public void Print()
+    {
+        Console.WriteLine($"- Class {this.Name}");
+        Console.WriteLine($"- State: {this.State}");
+
+        if (this.MethodsInfo == null)
+        {
+            return;
+        }
+
+        foreach (var methodInfo in this.MethodsInfo)
+        {
+            methodInfo.Print();
+        }
+    }
+
+    private static MethodTestInfo RunTestAndSupplementary(Type type, MethodInfo method)
+    {
+        var instance = Activator.CreateInstance(type);
+        var state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
+        if (state != ClassState.Passed)
+        {
+            throw new SupplementaryMethodException(ClassState.BeforeMethodFailed);
+        }
+
+        var methodTestInfo = method.IsStatic
+            ? MethodTestInfo.StartTest(null, method)
+            : MethodTestInfo.StartTest(instance, method);
+
+        state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
+        if (state != ClassState.Passed)
+        {
+            throw new SupplementaryMethodException(ClassState.AfterMethodFailed);
+        }
+
+        return methodTestInfo;
+    }
+
+    /// <summary>
+    /// Used to start methods with either <see cref="BeforeAttribute"/> of <see cref="AfterAttribute"/> attributes.
     /// </summary>
     /// <param name="type">Type where methods are contained.</param>
     /// <param name="instance">Instance on which methods are executed.</param>
-    /// <param name="attributeType">Either <see cref="BeforeAttribute" /> of <see cref="AfterAttribute" />.</param>
+    /// <param name="attributeType">Either <see cref="BeforeAttribute"/> of <see cref="AfterAttribute"/>.</param>
     /// <returns>State of the class: Passed if everything's fine or other if an exception occurs within.</returns>
     private static ClassState StartSupplementaryMethods(Type type, object instance, Type attributeType)
     {
@@ -97,15 +144,21 @@ public class ClassTestInfo
 
         try
         {
-            Parallel.ForEach(methodsInfo, method => method.Invoke(instance, null));
-        }
-        catch (AggregateException exception)
-        {
-            if (exception.InnerException is TargetInvocationException)
+            foreach (var method in methodsInfo)
             {
-                if (attributeType == typeof(BeforeAttribute)) return ClassState.BeforeMethodFailed;
+                method.Invoke(instance, null);
+            }
+        }
+        catch (TargetInvocationException)
+        {
+            if (attributeType == typeof(BeforeAttribute))
+            {
+                return ClassState.BeforeMethodFailed;
+            }
 
-                if (attributeType == typeof(AfterAttribute)) return ClassState.AfterMethodFailed;
+            if (attributeType == typeof(AfterAttribute))
+            {
+                return ClassState.AfterMethodFailed;
             }
         }
 
@@ -113,30 +166,38 @@ public class ClassTestInfo
     }
 
     /// <summary>
-    ///     Used to start methods with either <see cref="BeforeClassAttribute" /> of <see cref="AfterClassAttribute" />
-    ///     attributes.
+    /// Used to start methods with either <see cref="BeforeClassAttribute"/> of <see cref="AfterClassAttribute"/> attributes.
     /// </summary>
     /// <param name="type">Type where methods are contained.</param>
-    /// <param name="attributeType">Either <see cref="BeforeClassAttribute" /> of <see cref="AfterClassAttribute" />.</param>
+    /// <param name="attributeType">Either <see cref="BeforeClassAttribute"/> of <see cref="AfterClassAttribute"/>.</param>
     /// <returns>State of the class: Passed if everything's fine or other if an exception occurs within.</returns>
     private static ClassState StartSupplementaryClassMethods(Type type, Type attributeType)
     {
         var classMethods = GetMethods(type, attributeType);
         var classMethodsInfo = classMethods as MethodInfo[] ?? classMethods.ToArray();
 
-        if (classMethodsInfo.Any(method => !method.IsStatic)) return ClassState.ClassMethodWasNotStatic;
-        
+        if (classMethodsInfo.Any(method => !method.IsStatic))
+        {
+            return ClassState.ClassMethodWasNotStatic;
+        }
+
         try
         {
-            Parallel.ForEach(classMethodsInfo, method => method.Invoke(null, null));
-        }
-        catch (AggregateException exception)
-        {
-            if (exception.InnerException is TargetInvocationException)
+            foreach (var method in classMethodsInfo)
             {
-                if (attributeType == typeof(BeforeClassAttribute)) return ClassState.BeforeClassMethodFailed;
+                method.Invoke(null, null);
+            }
+        }
+        catch (TargetInvocationException exception)
+        {
+            if (attributeType == typeof(BeforeClassAttribute))
+            {
+                return ClassState.BeforeClassMethodFailed;
+            }
 
-                if (attributeType == typeof(AfterClassAttribute)) return ClassState.AfterClassMethodFailed;
+            if (attributeType == typeof(AfterClassAttribute))
+            {
+                return ClassState.AfterClassMethodFailed;
             }
         }
 
@@ -144,10 +205,8 @@ public class ClassTestInfo
     }
 
     private static IEnumerable<MethodInfo> GetMethods(Type type, Type attributeType)
-    {
-        return from method in type.GetMethods()
+        => from method in type.GetMethods()
             from attribute in Attribute.GetCustomAttributes(method)
             where attribute.GetType() == attributeType
             select method;
-    }
 }
