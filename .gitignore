@@ -350,3 +350,8 @@ MigrationBackup/
 .ionide/
 
 *.txt
+
+*.idea/
+
+Migrations/
+*.db
