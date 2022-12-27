@@ -2,16 +2,10 @@ namespace MyThreadPool.Tests;
 
 public class Tests
 {
-    [SetUp]
-    public void Setup()
-    {
-        
-    }
-
     [Test]
     public void ValueCalculatedInTaskShouldBeAvailable()
     {
-        var pool = new MyThreadPool(3);
+        using var pool = new MyThreadPool(5);
         var task = pool.Submit(() => 2 * 2);
         Thread.Sleep(100);
 
@@ -25,7 +19,7 @@ public class Tests
     [Test]
     public void MultipleContinuedTasksAreCalculatedCorrectly()
     {
-        var pool = new MyThreadPool(3);
+        using var pool = new MyThreadPool(5);
         var task = pool.Submit(() => 2 * 2);
         Thread.Sleep(10);
 
@@ -42,20 +36,14 @@ public class Tests
     [Test]
     public void SubmittingInMultipleThreadsGivesCorrectResults()
     {
-        var pool = new MyThreadPool(5);
-        var threads = new Thread[10];
+        using var pool = new MyThreadPool(5);
         var results = new IMyTask<int>[10];
-        for (int i = 0; i < 10; i++)
-        {
-            var localI = i;
-            threads[i] = new Thread(() => results[localI] = pool.Submit(() => localI * 10));
-        }
 
-        foreach (var thread in threads)
+        Parallel.For(0, 10, index =>
         {
-            thread.Start();
-        }
-
+            results[index] = pool.Submit(() => index * 10);
+        });
+            
         Thread.Sleep(100);
         for (int i = 0; i < 10; i++)
         {
@@ -64,16 +52,9 @@ public class Tests
     }
 
     [Test]
-    public void Test()
-    {
-        var pool = new MyThreadPool(5);
-        var task = pool.Submit(() => 4 * 4);
-    }
-
-    [Test]
     public void CannotSubmitAfterShutdown()
     {
-        var pool = new MyThreadPool(5);
+        using var pool = new MyThreadPool(5);
         pool.Submit(() => 5);
         pool.Shutdown();
         Assert.Throws<InvalidOperationException>(() => pool.Submit(() => 6));
@@ -82,8 +63,7 @@ public class Tests
     [Test]
     public void AllTasksMustBeCalculatedAfterShutdown()
     {
-        var pool = new MyThreadPool(2);
-
+        using var pool = new MyThreadPool(5);
         var amount = 30;
         var tasks = new IMyTask<double>[amount];
         var results = new double[amount];
@@ -119,7 +99,7 @@ public class Tests
     [Test]
     public void AggregateExceptionAndInnerExceptionAreReceived()
     {
-        var pool = new MyThreadPool(2);
+        using var pool = new MyThreadPool(5);
         var array = new int[3];
         var task = pool.Submit(() => array[4]);
 

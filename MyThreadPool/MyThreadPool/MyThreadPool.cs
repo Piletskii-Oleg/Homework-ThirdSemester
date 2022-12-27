@@ -5,21 +5,19 @@ using System.Collections.Concurrent;
 /// <summary>
 /// Thread pool on which calculations can be performed via <see cref="IMyTask{TResult}"/>.
 /// </summary>
-public class MyThreadPool
+public class MyThreadPool : IDisposable
 {
     private readonly object locker = new ();
 
-    private readonly ThreadPoolItem[] threadPoolItems;
     private readonly BlockingCollection<Action> collection;
+    private readonly CountdownEvent countdownEvent;
 
-    private readonly ManualResetEvent resetEvent = new (false);
-    private readonly CancellationTokenSource source = new ();
+    private volatile bool isDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
     /// </summary>
     /// <param name="threadCount">Amount of threads on thread pool.</param>
-    /// <exception cref="IncorrectThreadCountException">Throws if the amount of threads was lesser than 1.</exception>
     public MyThreadPool(int threadCount)
     {
         if (threadCount <= 0)
@@ -27,13 +25,12 @@ public class MyThreadPool
             throw new ArgumentException("Thread count cannot be lesser than 1", nameof(threadCount));
         }
 
-        this.threadPoolItems = new ThreadPoolItem[threadCount];
         this.collection = new BlockingCollection<Action>();
+        this.countdownEvent = new (threadCount);
 
         for (int i = 0; i < threadCount; i++)
         {
-            this.threadPoolItems[i] = new ThreadPoolItem(this.collection, this.resetEvent, this.source.Token);
-            this.threadPoolItems[i].Start();
+            new ThreadPoolItem(this.collection, this.countdownEvent).Start();
         }
     }
 
@@ -59,24 +56,109 @@ public class MyThreadPool
     /// </summary>
     public void Shutdown()
     {
-        this.collection.CompleteAdding();
-
-        while (true)
+        if (this.isDisposed)
         {
-            if (this.collection.Count == 0)
+            return;
+        }
+
+        lock (this.locker)
+        {
+            this.collection.CompleteAdding();
+
+            this.countdownEvent.Wait();
+        }
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        this.Shutdown();
+
+        lock (this.locker)
+        {
+            this.isDisposed = true;
+            this.collection.Dispose();
+            this.countdownEvent.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Represents an operation performed on <see cref="MyThreadPool"/> that returns a value.
+    /// </summary>
+    /// <typeparam name="T">Variable type.</typeparam>
+    private class MyTask<T> : IMyTask<T>
+    {
+        private readonly Func<T?> operation;
+        private readonly MyThreadPool threadPool;
+        private readonly object locker = new ();
+
+        private readonly ManualResetEvent resetEvent = new (false);
+
+        private T? result;
+        private volatile bool isCompleted;
+
+        private AggregateException? aggregateException;
+
+        private readonly BlockingCollection<Action> continuedActions = new ();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MyTask{T}"/> class.
+        /// </summary>
+        /// <param name="operation">A calculation to perform.</param>
+        /// <param name="threadPool"><see cref="MyThreadPool"/> on which calculation is performed.</param>
+        public MyTask(Func<T?> operation, MyThreadPool threadPool)
+        {
+            this.operation = operation;
+            this.threadPool = threadPool;
+        }
+
+        /// <inheritdoc/>
+        public bool IsCompleted => this.isCompleted;
+
+        /// <summary>
+        /// Gets result of the calculation or <see cref="AggregateException"/> if it was thrown during calculation.
+        /// </summary>
+        public T? Result
+        {
+            get
             {
-                this.source.Cancel();
-                foreach (var item in this.threadPoolItems)
+                this.resetEvent.WaitOne();
+
+                return this.aggregateException != null ? throw this.aggregateException : this.result;
+            }
+        }
+
+        /// <inheritdoc/>
+        public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<T?, TNewResult> newOperation)
+        {
+            if (!this.IsCompleted)
+            {
+                this.resetEvent.WaitOne();
+            }
+
+            return this.threadPool.Submit(() => newOperation(this.Result));
+        }
+
+        /// <summary>
+        /// Performs the stored operation.
+        /// </summary>
+        public void Start()
+        {
+            lock (this.locker)
+            {
+                try
                 {
-                    if (item.IsActive)
-                    {
-                        this.resetEvent.WaitOne();
-                    }
-
-                    item.Join();
+                    this.result = this.operation.Invoke();
                 }
-
-                break;
+                catch (Exception exception)
+                {
+                    this.aggregateException = new AggregateException(exception);
+                }
+                finally
+                {
+                    this.isCompleted = true;
+                    this.resetEvent.Set();
+                }
             }
         }
     }
@@ -84,51 +166,29 @@ public class MyThreadPool
     private class ThreadPoolItem
     {
         private readonly Thread thread;
-        private readonly BlockingCollection<Action> collection;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ThreadPoolItem"/> class.
         /// </summary>
         /// <param name="collection"><see cref="BlockingCollection{T}"/> from <see cref="MyThreadPool"/>.</param>
-        /// <param name="resetEvent"><see cref="ManualResetEvent"/> used to indicate whether <see cref="thread"/> is performing a calculation.</param>
-        /// <param name="token">Cancellation token from <see cref="source"/>.</param>
-        public ThreadPoolItem(BlockingCollection<Action> collection, ManualResetEvent resetEvent, CancellationToken token)
+        /// <param name="countdownEvent"><see cref="CountdownEvent"/> used to indicate whether <see cref="thread"/> is finished.</param>
+        public ThreadPoolItem(BlockingCollection<Action> collection, CountdownEvent countdownEvent)
         {
-            this.collection = collection;
-
             this.thread = new Thread(() =>
             {
-                while (!token.IsCancellationRequested)
+                foreach (var action in collection.GetConsumingEnumerable())
                 {
-                    if (this.collection.TryTake(out var action))
-                    {
-                        resetEvent.Reset();
-                        this.IsActive = true;
-
-                        action();
-
-                        resetEvent.Set();
-                        this.IsActive = false;
-                    }
+                    action();
                 }
+
+                countdownEvent.Signal();
             });
         }
-
-        /// <summary>
-        /// Gets a value indicating whether <see cref="ThreadPoolItem"/>'s thread is performing a calculation.
-        /// </summary>
-        public bool IsActive { get; private set; }
 
         /// <summary>
         /// Starts the stored <see cref="thread"/>.
         /// </summary>
         public void Start()
             => this.thread.Start();
-
-        /// <summary>
-        /// Stops the stored <see cref="thread"/>.
-        /// </summary>
-        public void Join()
-            => this.thread.Join();
     }
 }
