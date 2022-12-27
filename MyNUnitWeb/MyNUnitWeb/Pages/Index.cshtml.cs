@@ -2,6 +2,7 @@
 
 using Data;
 using Microsoft.EntityFrameworkCore;
+using MyNUnit.Info;
 
 public class IndexModel : PageModel
 { 
@@ -23,7 +24,6 @@ public class IndexModel : PageModel
             .Include(testsInfo => testsInfo.AssembliesTestInfo)
             .ThenInclude(assemblyInfo => assemblyInfo.ClassesInfo)
             .ThenInclude(classInfo => classInfo.MethodsInfo)
-            .ThenInclude(methodInfo => methodInfo.ExceptionInfo)
             .OrderBy(info => info.TestInfoId).ToListAsync();
     }
     
@@ -43,11 +43,22 @@ public class IndexModel : PageModel
         var filesPath = Path.Combine(wwwPath, "Uploads");
         var list = MyNUnit.MyNUnit.StartAllTests(filesPath);
 
+        var dbList = new List<AssemblyTestInfoDb>();
+
+        foreach (var info in list)
+        {
+            dbList.Add(new AssemblyTestInfoDb
+            {
+                Name = info.Name,
+                ClassesInfo = GetClassesInfo(info)
+            });
+        }
+
         if (list.Count != 0)
         {
             var info = new TestInfo
             {
-                AssembliesTestInfo = list,
+                AssembliesTestInfo = dbList,
                 TestDate = DateTime.Now,
             };
             infoContext.TestsInfo.Add(info);
@@ -85,5 +96,47 @@ public class IndexModel : PageModel
         {
             System.IO.File.Delete(fileName);
         }
+    }
+    
+    private List<ClassTestInfoDb> GetClassesInfo(AssemblyTestInfo info)
+    {
+        var list = new List<ClassTestInfoDb>();
+        foreach (var classInfo in info.ClassesInfo)
+        {
+            list.Add(new ClassTestInfoDb
+            {
+                Name = classInfo.Name,
+                MethodsInfo = GetMethodsInfo(classInfo),
+                State = classInfo.State,
+            });
+        }
+
+        return list;
+    }
+
+    private List<MethodTestInfoDb>? GetMethodsInfo(ClassTestInfo classInfo)
+    {
+        var list = new List<MethodTestInfoDb>();
+
+        if (classInfo.MethodsInfo == null)
+        {
+            return null;
+        }
+        
+        foreach (var methodInfo in classInfo.MethodsInfo)
+        {
+            list.Add(new MethodTestInfoDb
+            {
+                Name = methodInfo.Name,
+                State = methodInfo.State,
+                CompletionTime = methodInfo.CompletionTime,
+                Ignored = methodInfo.Ignored,
+                HasCaughtException = methodInfo.HasCaughtException,
+                ExpectedExceptionType = methodInfo.ExceptionInfo?.ExpectedExceptionType,
+                ActualExceptionType = methodInfo.ExceptionInfo?.ActualExceptionType,
+            });
+        }
+
+        return list;
     }
 }

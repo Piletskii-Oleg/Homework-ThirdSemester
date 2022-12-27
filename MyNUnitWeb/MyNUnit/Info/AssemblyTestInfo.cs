@@ -59,20 +59,6 @@ public class AssemblyTestInfo
         return new AssemblyTestInfo(assembly.GetName(), classesInfo.ToList());
     }
 
-    public int GetSuccessfulTestsCount()
-    {
-        return ClassesInfo
-            .SelectMany(classInfo => classInfo.MethodsInfo)
-            .Sum(methodInfo => methodInfo.State == TestState.Passed ? 1 : 0);
-    }
-
-    public int GetUnsuccessfulTestsCount()
-    {
-        return ClassesInfo
-                .SelectMany(classInfo => classInfo.MethodsInfo)
-                .Sum(methodInfo => methodInfo.State != TestState.Passed ? 1 : 0);
-    }
-
     private static IEnumerable<Type> GetTypes(Assembly assembly)
     {
         return (from type in assembly.DefinedTypes

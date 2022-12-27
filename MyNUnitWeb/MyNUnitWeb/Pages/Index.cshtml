@@ -42,7 +42,7 @@
     {
         @foreach (var assemblyInfo in info.AssembliesTestInfo)
         {
-            <tr data-bs-toggle="collapse" data-bs-target="#methods_@assemblyInfo.AssemblyTestInfoId">
+            <tr data-bs-toggle="collapse" data-bs-target="#methods_@assemblyInfo.AssemblyTestInfoDbId">
                 <td>
                     <button class="btn btn-outline-dark" type="button">
                         @assemblyInfo.Name
@@ -53,9 +53,9 @@
                 <td>@info.TestDate</td>
             </tr>
             
-            <tr class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+            <tr class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoDbId">
                 <td colspan="2">
-                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoDbId">
                         <table class="table">
                             <tr>
                                 <th>Class name</th>
@@ -82,7 +82,7 @@
                         </table>
                     </div>
                     
-                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoId">
+                    <div class="collapse" id="methods_@assemblyInfo.AssemblyTestInfoDbId">
                         <table class="table">
                             <tr>
                                 <th>Method name</th>
@@ -114,8 +114,8 @@
                                     <td>@methodInfo.State</td>
                                     <td>@methodInfo.Ignored</td>
                                     <td>@methodInfo.CompletionTime</td>
-                                    <td>@methodInfo.ExceptionInfo?.ActualExceptionType</td>
-                                    <td>@methodInfo.ExceptionInfo?.ExpectedExceptionType</td>
+                                    <td>@methodInfo.ActualExceptionType</td>
+                                    <td>@methodInfo.ExpectedExceptionType</td>
                                 </tr>
                             }
                         </table>

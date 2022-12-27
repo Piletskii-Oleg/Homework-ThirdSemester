@@ -8,5 +8,5 @@ public class TestInfo
     
     public DateTime TestDate { get; set; }
     
-    public List<AssemblyTestInfo> AssembliesTestInfo { get; set; }
+    public List<AssemblyTestInfoDb> AssembliesTestInfo { get; set; }
 }
