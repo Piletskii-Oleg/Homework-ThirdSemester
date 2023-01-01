@@ -24,7 +24,7 @@ public class IndexModel : PageModel
             .Include(testsInfo => testsInfo.AssembliesTestInfo)
             .ThenInclude(assemblyInfo => assemblyInfo.ClassesInfo)
             .ThenInclude(classInfo => classInfo.MethodsInfo)
-            .OrderBy(info => info.TestInfoId).ToListAsync();
+            .OrderByDescending(info => info.TestInfoId).ToListAsync();
     }
     
     public async Task<IActionResult> OnPostUploadAsync(List<IFormFile> files)
