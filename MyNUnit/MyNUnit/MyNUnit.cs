@@ -17,17 +17,42 @@ public static class MyNUnit
     public static List<AssemblyTestInfo> StartAllTests(string path)
     {
         var info = new DirectoryInfo(path);
-        var dllFiles = from file in info.GetFiles()
-            where file.Extension == ".dll"
-            select file;
+        var files = info.GetFiles();
+
+        var assemblies = new List<FileInfo>();
+        foreach (var file in files)
+        {
+            if (CheckIsAssembly(file))
+            {
+                assemblies.Add(file);
+            }
+        }
 
         var assembliesInfo = new ConcurrentBag<AssemblyTestInfo>();
-        Parallel.ForEach(dllFiles, file =>
+        Parallel.ForEach(assemblies, file =>
         {
-            var assembly = Assembly.LoadFrom(file.FullName);
+            byte[] rawAssembly = File.ReadAllBytes(file.FullName);
+            var assembly = Assembly.Load(rawAssembly);
+
             assembliesInfo.Add(AssemblyTestInfo.StartAssemblyTests(assembly));
         });
 
         return assembliesInfo.ToList();
+    }
+
+    private static bool CheckIsAssembly(FileInfo file)
+    {
+        bool isAssembly = true;
+
+        try
+        {
+            AssemblyName.GetAssemblyName(file.FullName);
+        }
+        catch (BadImageFormatException)
+        {
+            isAssembly = false;
+        }
+
+        return isAssembly;
     }
 }

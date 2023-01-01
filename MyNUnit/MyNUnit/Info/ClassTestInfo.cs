@@ -110,6 +110,11 @@ public class ClassTestInfo
 
     private static MethodTestInfo RunTestAndSupplementary(Type type, MethodInfo method)
     {
+        if (method.IsStatic)
+        {
+            return MethodTestInfo.StartTest(null, method);
+        }
+
         var instance = Activator.CreateInstance(type);
         var state = StartSupplementaryMethods(type, instance, typeof(BeforeAttribute));
         if (state != ClassState.Passed)
@@ -117,9 +122,7 @@ public class ClassTestInfo
             throw new SupplementaryMethodException(ClassState.BeforeMethodFailed);
         }
 
-        var methodTestInfo = method.IsStatic
-            ? MethodTestInfo.StartTest(null, method)
-            : MethodTestInfo.StartTest(instance, method);
+        var methodTestInfo = MethodTestInfo.StartTest(instance, method);
 
         state = StartSupplementaryMethods(type, instance, typeof(AfterAttribute));
         if (state != ClassState.Passed)
