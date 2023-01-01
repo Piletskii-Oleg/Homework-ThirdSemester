@@ -64,16 +64,10 @@
                             
                             @foreach (var classInfo in assemblyInfo.ClassesInfo)
                             {
-                                string color;
-                                if (classInfo.State == ClassState.Passed)
-                                {
-                                    color = "table-success";
-                                }
-                                else
-                                {
-                                    color = "table-warning";
-                                }
-                                
+                                string color = classInfo.State == ClassState.Passed
+                                    ? "table-success"
+                                    : "table-warning";
+
                                 <tr class="@color">
                                     <td>@classInfo.Name</td>
                                     <td>@classInfo.State</td>

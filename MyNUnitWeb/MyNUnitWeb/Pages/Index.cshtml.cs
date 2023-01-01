@@ -43,16 +43,12 @@ public class IndexModel : PageModel
         var filesPath = Path.Combine(wwwPath, "Uploads");
         var assembliesList = MyNUnit.MyNUnit.StartAllTests(filesPath);
 
-        var dbList = new List<AssemblyTestInfoDb>();
-
-        foreach (var assemblyTestInfo in assembliesList)
-        {
-            dbList.Add(new AssemblyTestInfoDb
+        var dbList = assembliesList.Select(assemblyTestInfo => new AssemblyTestInfoDb
             {
                 Name = assemblyTestInfo.Name.Name,
                 ClassesInfo = GetClassesInfo(assemblyTestInfo)
-            });
-        }
+            })
+            .ToList();
 
         if (dbList.Count != 0)
         {
@@ -61,6 +57,7 @@ public class IndexModel : PageModel
                 AssembliesTestInfo = dbList,
                 TestDate = DateTime.Now,
             };
+            
             infoContext.TestsInfo.Add(info);
             await infoContext.SaveChangesAsync();
         }
@@ -74,22 +71,24 @@ public class IndexModel : PageModel
     {
         foreach (var file in files)
         {
-            if (file.Length > 0)
+            if (file.Length <= 0)
             {
-                var filePath = Path.Combine(path, "Uploads");
-
-                if (!Directory.Exists(filePath))
-                {
-                    Directory.CreateDirectory(filePath);
-                }
-
-                await using var stream = System.IO.File.Create(Path.Combine(filePath, Path.GetRandomFileName()));
-                await file.CopyToAsync(stream);
+                continue;
             }
+            
+            var filePath = Path.Combine(path, "Uploads");
+
+            if (!Directory.Exists(filePath))
+            {
+                Directory.CreateDirectory(filePath);
+            }
+
+            await using var stream = System.IO.File.Create(Path.Combine(filePath, Path.GetRandomFileName()));
+            await file.CopyToAsync(stream);
         }
     }
     
-    private void DeleteFiles(string path)
+    private static void DeleteFiles(string path)
     {
         var files = Directory.GetFiles(path);
         foreach (var fileName in files)
@@ -97,35 +96,17 @@ public class IndexModel : PageModel
             System.IO.File.Delete(fileName);
         }
     }
-    
-    private List<ClassTestInfoDb> GetClassesInfo(AssemblyTestInfo info)
-    {
-        var list = new List<ClassTestInfoDb>();
-        foreach (var classInfo in info.ClassesInfo)
-        {
-            list.Add(new ClassTestInfoDb
+
+    private static List<ClassTestInfoDb> GetClassesInfo(AssemblyTestInfo info)
+        => info.ClassesInfo.Select(classInfo => new ClassTestInfoDb
             {
                 Name = classInfo.Name,
-                MethodsInfo = GetMethodsInfo(classInfo),
-                State = classInfo.State,
-            });
-        }
+                MethodsInfo = GetMethodsInfo(classInfo), State = classInfo.State
+            })
+            .ToList();
 
-        return list;
-    }
-
-    private List<MethodTestInfoDb>? GetMethodsInfo(ClassTestInfo classInfo)
-    {
-        var list = new List<MethodTestInfoDb>();
-
-        if (classInfo.MethodsInfo == null)
-        {
-            return null;
-        }
-        
-        foreach (var methodInfo in classInfo.MethodsInfo)
-        {
-            list.Add(new MethodTestInfoDb
+    private static List<MethodTestInfoDb>? GetMethodsInfo(ClassTestInfo classInfo)
+        => classInfo.MethodsInfo?.Select(methodInfo => new MethodTestInfoDb
             {
                 Name = methodInfo.Name,
                 State = methodInfo.State,
@@ -134,9 +115,6 @@ public class IndexModel : PageModel
                 HasCaughtException = methodInfo.HasCaughtException,
                 ExpectedExceptionType = methodInfo.ExceptionInfo?.ExpectedExceptionType?.ToString(),
                 ActualExceptionType = methodInfo.ExceptionInfo?.ActualException?.GetType().ToString(),
-            });
-        }
-
-        return list;
-    }
+            })
+            .ToList();
 }

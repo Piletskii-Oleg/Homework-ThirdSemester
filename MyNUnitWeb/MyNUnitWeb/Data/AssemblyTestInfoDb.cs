@@ -7,7 +7,7 @@ public class AssemblyTestInfoDb
 {
     public int AssemblyTestInfoDbId { get; set; }
     
-    public string Name { get; set; }
+    public string? Name { get; set; }
     
     public List<ClassTestInfoDb> ClassesInfo { get; set; }
     
