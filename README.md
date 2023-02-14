@@ -1,1 +1,1 @@
-Home assignments for the programming course at SPbU, 2nd year.
+Home assignments for the programming course at SPbU, 3rd semester.
