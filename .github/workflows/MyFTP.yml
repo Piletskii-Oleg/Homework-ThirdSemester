@@ -7,15 +7,14 @@ env:
 
 jobs:
   build:
-
-    name: build-${{matrix.os}}-${{project-name}}
+    env: 
+      project-name: MyFTP
+    
+    name: build-${{matrix.os}}-${{env.project-name}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-
-    env: 
-      project-name: MyFTP
 
     steps:
     - uses: actions/checkout@v2
