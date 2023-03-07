@@ -2,37 +2,30 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using Info;
+using global::MyNUnit.Info;
 
 /// <summary>
-/// Class that is used to start tests.
+///     Class that is used to start tests.
 /// </summary>
 public static class MyNUnit
 {
     /// <summary>
-    /// Starts all tests by the given path.
+    ///     Starts all tests by the given path.
     /// </summary>
     /// <param name="path">Path to the assemblies.</param>
     /// <returns>List with information about tests in each assembly.</returns>
     public static List<AssemblyTestInfo> StartAllTests(string path)
     {
-        var info = new DirectoryInfo(path);
+        DirectoryInfo info = new(path);
         var files = info.GetFiles();
 
-        var assemblies = new List<FileInfo>();
-        foreach (var file in files)
-        {
-            if (CheckIsAssembly(file))
-            {
-                assemblies.Add(file);
-            }
-        }
+        var assemblies = files.Where(CheckIsAssembly).ToList();
 
         var assembliesInfo = new ConcurrentBag<AssemblyTestInfo>();
         Parallel.ForEach(assemblies, file =>
         {
-            byte[] rawAssembly = File.ReadAllBytes(file.FullName);
-            var assembly = Assembly.Load(rawAssembly);
+            var rawAssembly = File.ReadAllBytes(file.FullName);
+            Assembly assembly = Assembly.Load(rawAssembly);
 
             assembliesInfo.Add(AssemblyTestInfo.StartAssemblyTests(assembly));
         });
@@ -42,13 +35,13 @@ public static class MyNUnit
 
     private static bool CheckIsAssembly(FileInfo file)
     {
-        bool isAssembly = true;
+        var isAssembly = true;
 
         try
         {
             AssemblyName.GetAssemblyName(file.FullName);
         }
-        catch (BadImageFormatException exception)
+        catch (BadImageFormatException)
         {
             isAssembly = false;
         }

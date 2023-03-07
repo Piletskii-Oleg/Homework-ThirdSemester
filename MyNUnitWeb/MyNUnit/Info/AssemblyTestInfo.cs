@@ -2,36 +2,36 @@ namespace MyNUnit.Info;
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using SDK.Attributes;
+using global::MyNUnit.SDK.Attributes;
 
 /// <summary>
-/// Contains information about tests in an assembly.
+///     Contains information about tests in an assembly.
 /// </summary>
 public class AssemblyTestInfo
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="AssemblyTestInfo"/> class.
+    ///     Initializes a new instance of the <see cref="AssemblyTestInfo" /> class.
     /// </summary>
     /// <param name="name">Name of the assembly.</param>
-    /// <param name="classesInfo">List of <see cref="ClassTestInfo"/> of the assembly.</param>
+    /// <param name="classesInfo">List of <see cref="ClassTestInfo" /> of the assembly.</param>
     private AssemblyTestInfo(AssemblyName name, IReadOnlyList<ClassTestInfo> classesInfo)
     {
-        this.Name = name;
-        this.ClassesInfo = classesInfo;
+        Name = name;
+        ClassesInfo = classesInfo;
     }
 
     /// <summary>
-    /// Gets name of the assembly.
+    ///     Gets name of the assembly.
     /// </summary>
     public AssemblyName Name { get; }
 
     /// <summary>
-    /// Gets list of <see cref="ClassTestInfo"/> of the assembly.
+    ///     Gets list of <see cref="ClassTestInfo" /> of the assembly.
     /// </summary>
     public IReadOnlyList<ClassTestInfo> ClassesInfo { get; }
 
     /// <summary>
-    /// Starts tests in the given assembly and returns info about it.
+    ///     Starts tests in the given assembly and returns info about it.
     /// </summary>
     /// <param name="assembly">Assembly that should be tested.</param>
     /// <returns>Information about tests contained in an assembly.</returns>
@@ -54,12 +54,12 @@ public class AssemblyTestInfo
     }
 
     /// <summary>
-    /// Prints information about assembly tests on the console.
+    ///     Prints information about assembly tests on the console.
     /// </summary>
     public void Print()
     {
         Console.WriteLine($"Assembly name: {Name}");
-        foreach (var classInfo in ClassesInfo)
+        foreach (ClassTestInfo classInfo in ClassesInfo)
         {
             classInfo.Print();
         }

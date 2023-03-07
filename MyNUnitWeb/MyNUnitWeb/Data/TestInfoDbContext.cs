@@ -1,7 +1,6 @@
 ﻿namespace MyNUnitWeb.Data;
 
 using Microsoft.EntityFrameworkCore;
-using MyNUnit.Info;
 
 public class TestInfoDbContext : DbContext
 {

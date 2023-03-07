@@ -1,6 +1,5 @@
 ﻿namespace MyNUnitWeb.Data;
 
-using MyNUnit.Info;
 using MyNUnit.State;
 
 public class AssemblyTestInfoDb

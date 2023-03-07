@@ -17,7 +17,7 @@ public class MethodTestInfoDb
     public TestState State { get; set; }
 
     /// <summary>
-    ///     Gets time which was required to complete the test. 0 if it is ignored.
+    /// Gets time which was required to complete the test. 0 if it is ignored.
     /// </summary>
     public TimeSpan CompletionTime { get ; set; }
 
