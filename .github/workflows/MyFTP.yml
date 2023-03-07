@@ -4,12 +4,12 @@ on: [push]
 
 env:
   DOTNET_VERSION: '6.x'
-  project-name: MyFTP
+  project_name: MyFTP
 
 jobs:
   build:   
     
-    name: build-${{matrix.os}}-${{env.project-name}}
+    name: build-${{matrix.os}}-${{env.project_name}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
