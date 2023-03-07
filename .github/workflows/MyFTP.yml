@@ -9,13 +9,12 @@ env:
 jobs:
   build:   
     
-    name: build-${{matrix.os}}-${{project.name}}
+    name: build-${{matrix.os}}-${{matrix.project_name}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-      project:
-        name: MyFTP
+        project_name: ['MyFTP']
 
     steps:
     - uses: actions/checkout@v2
@@ -25,10 +24,10 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: NuGet Restore
-      run: nuget restore "${{project_name}}"
+      run: nuget restore "${{matrix.project_name}}"
 
     - name: Build
-      run: dotnet build "${{project_name}}"
+      run: dotnet build "${{matrix.project_name}}"
 
     - name: Tests
-      run: dotnet test "${{project_name}}/${{project_name}}.Tests"
+      run: dotnet test "${{matrix.project_name}}/${{matrix.project_name}}.Tests"
