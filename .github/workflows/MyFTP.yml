@@ -9,7 +9,7 @@ env:
 jobs:
   build:   
     
-    name: build-${{matrix.os - project.name }}
+    name: build-${{matrix.os}}-${{project.name}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
