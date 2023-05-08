@@ -28,11 +28,13 @@ public class Server
         
         socket = await listener.AcceptSocketAsync();
         HasConnectionOpened = true;
+
+        listener.Stop();
     }
 
     public async Task<string> Receive()
     {
-        var stream = new NetworkStream(socket);
+        await using var stream = new NetworkStream(socket);
         using var reader = new StreamReader(stream);
 
         var receivedMessage = await reader.ReadLineAsync();
@@ -51,7 +53,7 @@ public class Server
 
     public async Task Send(string message)
     {
-        var stream = new NetworkStream(socket);
+        await using var stream = new NetworkStream(socket);
         await using var writer = new StreamWriter(stream);
         
         await writer.WriteLineAsync(message);
@@ -67,6 +69,8 @@ public class Server
     {
         socket.Close();
 
+        tokenSource.Cancel();
+        
         IsClosed = true;
     }
 }

@@ -56,6 +56,8 @@ public class Client
         stream.Close();
         writer.Close();
 
+        tokenSource.Cancel();
+
         IsConnectionClosed = true;
     }
 }

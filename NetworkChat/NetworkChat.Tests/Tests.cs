@@ -51,7 +51,12 @@ public class Tests
         
         await client.Send("exit");
         Thread.Sleep(1000);
-        Assert.That(client.IsConnectionClosed, Is.True);
-        Assert.That(server.IsClosed, Is.True);
+        await server.Receive();
+        
+        Assert.Multiple(() =>
+        {
+            Assert.That(client.IsConnectionClosed, Is.True);
+            Assert.That(server.IsClosed, Is.True);
+        });
     }
 }
